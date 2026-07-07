@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.4"
+  },
+  "dependencies": {
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "eslint-plugin-unused-imports": "^4.4.1"
+  }
+}
