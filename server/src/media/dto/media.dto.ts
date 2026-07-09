@@ -1,4 +1,4 @@
-export type MediaType = "image" | "video" | "audio";
+import { MediaType } from "@superplayer/contracts";
 
 export interface CreateMediaDTO {
   id: string;
@@ -19,18 +19,6 @@ export interface UploadMediaInputDTO {
   mime_type: string;
   original_name: string;
   stream: NodeJS.ReadableStream;
-}
-
-export interface MediaResponseDTO {
-  id: string;
-  owner_id: string;
-  media_type: MediaType;
-  description?: string | null;
-  file_path: string;
-  mime_type: string;
-  size_bytes: number;
-  duration_seconds: number;
-  title: string;
 }
 
 export interface ExecuteMediaInputDTO {

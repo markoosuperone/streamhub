@@ -1,25 +1,28 @@
 import { IPlaylistRepository } from "@/playlists/contracts/repository/playlist.repository.interface.ts";
 import { IPlaylist } from "@/playlists/domain/playlist.domain.ts";
-import { PlaylistCreateDTO } from "@/playlists/dto/playlist.dto.ts";
-import { PlaylistUpdateDTO } from "@/playlists/dto/playlist.dto.ts";
+import {
+  PaginatedResponse,
+  PlaylistCreateDTO,
+  PlaylistResponseDTO,
+  PlaylistUpdateDTO,
+} from "@superplayer/contracts";
 import { PlaylistNotFoundError } from "@/playlists/errors/playlist.errors.ts";
-import { PaginatedResponse } from "@/shared/types/pagination.types.ts";
 import { normalizeTitle } from "@/shared/utility/normalizeTitle.ts";
 
 export interface IPlaylistUsecase {
-  createPlaylist(playlist: PlaylistCreateDTO): Promise<PlaylistCreateDTO>;
-  getPlaylist(id: string, user_id: string): Promise<PlaylistCreateDTO>;
+  createPlaylist(playlist: PlaylistCreateDTO): Promise<PlaylistResponseDTO>;
+  getPlaylist(id: string, user_id: string): Promise<PlaylistResponseDTO>;
   updatePlaylist(
     id: string,
     playlist: PlaylistUpdateDTO,
     user_id: string
-  ): Promise<PlaylistCreateDTO>;
+  ): Promise<PlaylistResponseDTO>;
   deletePlaylist(id: string, user_id: string): Promise<void>;
   getPlaylistByOwnerId(
     owner_id: string,
     limit: number,
     offset: number
-  ): Promise<PaginatedResponse<PlaylistCreateDTO>>;
+  ): Promise<PaginatedResponse<PlaylistResponseDTO>>;
 }
 
 export class PlaylistUsecase implements IPlaylistUsecase {
@@ -30,7 +33,7 @@ export class PlaylistUsecase implements IPlaylistUsecase {
     return await this.playlistRepository.create({ ...playlist, title });
   }
 
-  async getPlaylist(id: string, user_id: string): Promise<PlaylistCreateDTO> {
+  async getPlaylist(id: string, user_id: string): Promise<IPlaylist> {
     const playlist = await this.playlistRepository.getById(id, user_id);
     if (!playlist) {
       throw new PlaylistNotFoundError();
@@ -41,7 +44,7 @@ export class PlaylistUsecase implements IPlaylistUsecase {
     owner_id: string,
     limit: number,
     offset: number
-  ): Promise<PaginatedResponse<PlaylistCreateDTO>> {
+  ): Promise<PaginatedResponse<IPlaylist>> {
     const { total, items } = await this.playlistRepository.getByOwnerId(
       owner_id,
       limit,
@@ -59,7 +62,7 @@ export class PlaylistUsecase implements IPlaylistUsecase {
     id: string,
     playlist: PlaylistUpdateDTO,
     user_id: string
-  ): Promise<PlaylistCreateDTO> {
+  ): Promise<IPlaylist> {
     const updatedPlaylist = await this.playlistRepository.update(
       { ...playlist, id },
       user_id

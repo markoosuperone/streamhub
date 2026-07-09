@@ -1,6 +1,6 @@
-import { MediaType } from "@superplayer/contracts";
+export type MediaType = "image" | "video" | "audio";
 
-export interface IMedia {
+export interface MediaResponseDTO {
   id: string;
   owner_id: string;
   media_type: MediaType;
@@ -10,6 +10,4 @@ export interface IMedia {
   size_bytes: number;
   duration_seconds: number;
   title: string;
-  created_at: Date;
-  updated_at: Date;
-} 
+}

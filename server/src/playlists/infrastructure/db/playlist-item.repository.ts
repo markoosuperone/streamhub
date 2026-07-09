@@ -3,8 +3,8 @@ import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";
 import {
   GetByPlaylistIdRepoResponseDTO,
   PlaylistItemCreateRecordDTO,
-  PlaylistItemUpdateDTO,
 } from "@/playlists/dto/playlist-item.dto.ts";
+import { PlaylistItemUpdateDTO } from "@superplayer/contracts";
 import {
   CreatePlaylistItemRecordError,
   DeletePlaylistItemRecordError,

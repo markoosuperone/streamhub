@@ -1,7 +1,7 @@
 import "@fastify/multipart";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { Static } from "typebox";
-import { MediaType } from "@/media/domain/media.domain.ts";
+import { MediaType } from "@superplayer/contracts";
 import { IMediaUsecase } from "@/media/application/media.usecase.ts";
 import { IAuthService } from "@/auth/contracts/services/auth.interface.ts";
 import { FileNotFoundError } from "@/media/errors/media.errors.ts";

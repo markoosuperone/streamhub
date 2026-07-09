@@ -4,7 +4,7 @@ import {
   GetByPlaylistIdRepoResponseDTO,
   PlaylistItemCreateRecordDTO,
 } from "@/playlists/dto/playlist-item.dto.ts";
-import { PlaylistItemUpdateDTO } from "@/playlists/dto/playlist-item.dto.ts";
+import { PlaylistItemUpdateDTO } from "@superplayer/contracts";
 
 export interface IPlaylistItemRepository {
   create(

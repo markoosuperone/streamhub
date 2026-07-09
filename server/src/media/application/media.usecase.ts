@@ -1,12 +1,11 @@
 import { IMedia } from "@/media/domain/media.domain.ts";
 
+import { MediaResponseDTO, PaginatedResponse } from "@superplayer/contracts";
 import {
   CreateMediaDTO,
   ExecuteMediaInputDTO,
-  MediaResponseDTO,
   UploadMediaInputDTO,
 } from "@/media/dto/media.dto.ts";
-import { PaginatedResponse } from "@/shared/types/pagination.types.ts";
 import { IUuidGenerator } from "@/shared/utility/uuid-generator.ts";
 import { MediaNotFoundError } from "@/media/errors/media.errors.ts";
 import { basename } from "node:path";
