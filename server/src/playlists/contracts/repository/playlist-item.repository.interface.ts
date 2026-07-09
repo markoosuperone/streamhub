@@ -1,14 +1,14 @@
 import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";
 import { IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
 import {
-  IGetByPlaylistIdRepoResponse,
-  IPlaylistItemCreateRecordDto,
+  GetByPlaylistIdRepoResponseDTO,
+  PlaylistItemCreateRecordDTO,
 } from "@/playlists/dto/playlist-item.dto.ts";
-import { IPlaylistItemUpdateDto } from "@/playlists/dto/playlist-item.dto.ts";
+import { PlaylistItemUpdateDTO } from "@/playlists/dto/playlist-item.dto.ts";
 
 export interface IPlaylistItemRepository {
   create(
-    playlistItem: IPlaylistItemCreateRecordDto,
+    playlistItem: PlaylistItemCreateRecordDTO,
     tx?: IDbTransaction
   ): Promise<IPlaylistItem>;
   getById(
@@ -22,18 +22,18 @@ export interface IPlaylistItemRepository {
     limit: number,
     offset: number,
     tx?: IDbTransaction,
-  ): Promise<IGetByPlaylistIdRepoResponse>;
+  ): Promise<GetByPlaylistIdRepoResponseDTO>;
   getByPlaylistId(
     playlist_id: string,
     ownerId: string,
     tx?: IDbTransaction,
   ): Promise<IPlaylistItem[]>;
   update(
-    playlistItem: IPlaylistItemUpdateDto,
+    playlistItem: PlaylistItemUpdateDTO,
     tx?: IDbTransaction
   ): Promise<IPlaylistItem>;
   updateForOwner(
-    playlistItem: IPlaylistItemUpdateDto,
+    playlistItem: PlaylistItemUpdateDTO,
     ownerId: string,
     tx?: IDbTransaction
   ): Promise<IPlaylistItem>;

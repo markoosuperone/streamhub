@@ -1,14 +1,14 @@
 
 
-export interface CreateUserDto {
+export interface CreateUserDTO {
   email: string;
   password_hash: string;
 }
 
-export interface GetUserByEmailDto {
+export interface GetUserByEmailDTO {
   email: string;
 }
 
-export interface GetUserByIdDto {
+export interface GetUserByIdDTO {
   id: number;
 }

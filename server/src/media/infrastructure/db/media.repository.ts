@@ -4,7 +4,7 @@ import { IDbTransaction } from "@/transaction/repository/transaction.interface.t
 import postgres from "postgres";
 import {
   CreateMediaDTO,
-  GetMediaByOwnerIdRepoResponse,
+  GetMediaByOwnerIdRepoResponseDTO,
 } from "@/media/dto/media.dto.ts";
 import {
   CreateMediaRecordError,
@@ -70,7 +70,7 @@ export class MediaRepository implements IMediaStorage {
     limit: number,
     offset: number,
     tx?: IDbTransaction
-  ): Promise<GetMediaByOwnerIdRepoResponse> {
+  ): Promise<GetMediaByOwnerIdRepoResponseDTO> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
       const [count] = await db<CountRow[]>`

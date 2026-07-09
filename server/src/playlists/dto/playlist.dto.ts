@@ -1,15 +1,15 @@
-import { IPlaylist } from "../domain/playlist.domain.ts";
 
-export interface IPlaylistCreateDto {
+
+export interface PlaylistCreateDTO {
   owner_id: string;
   title: string;
 }
 
-export interface IPlaylistUpdateDto {
+export interface PlaylistUpdateDTO {
   id: string;
   title: string;
 }
-export interface IPlaylistGetByOwnerIdRepoResponse {
+export interface PlaylistGetByOwnerIdRepoResponseDTO {
   total: number,
-  items: IPlaylist[]
+  items: PlaylistCreateDTO[]
 }

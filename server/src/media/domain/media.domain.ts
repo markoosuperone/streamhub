@@ -1,4 +1,5 @@
-export type MediaType = "image" | "video" | "audio";
+import { MediaType } from "../dto/media.dto.ts";
+
 export interface IMedia {
   id: string;
   owner_id: string;

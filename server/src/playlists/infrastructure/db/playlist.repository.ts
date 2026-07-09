@@ -1,9 +1,9 @@
 import { IPlaylistRepository } from "@/playlists/contracts/repository/playlist.repository.interface.ts";
 import { IPlaylist } from "@/playlists/domain/playlist.domain.ts";
 import {
-  IPlaylistCreateDto,
-  IPlaylistGetByOwnerIdRepoResponse,
-  IPlaylistUpdateDto,
+  PlaylistCreateDTO,
+  PlaylistGetByOwnerIdRepoResponseDTO,
+  PlaylistUpdateDTO,
 } from "@/playlists/dto/playlist.dto.ts";
 import { IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
 import { getDb } from "@/shared/db/postgres.ts";
@@ -22,7 +22,7 @@ export class PlaylistRepository implements IPlaylistRepository {
   constructor(private readonly sql = getDb()) {}
 
   async create(
-    playlist: IPlaylistCreateDto,
+    playlist: PlaylistCreateDTO,
     tx?: IDbTransaction
   ): Promise<IPlaylist> {
     const db = (tx ?? this.sql) as DbExecutor;
@@ -70,7 +70,7 @@ export class PlaylistRepository implements IPlaylistRepository {
   }
 
   async update(
-    playlist: IPlaylistUpdateDto,
+    playlist: PlaylistUpdateDTO,
     user_id: string,
     tx?: IDbTransaction
   ): Promise<IPlaylist | null> {
@@ -128,7 +128,7 @@ export class PlaylistRepository implements IPlaylistRepository {
     limit: number,
     offset: number,
     tx?: IDbTransaction
-  ): Promise<IPlaylistGetByOwnerIdRepoResponse> {
+  ): Promise<PlaylistGetByOwnerIdRepoResponseDTO> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
       const total = await db<IPlaylist[]>`

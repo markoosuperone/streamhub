@@ -1,7 +1,7 @@
 import { IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
 import {
   CreateMediaDTO,
-  GetMediaByOwnerIdRepoResponse,
+  GetMediaByOwnerIdRepoResponseDTO,
 } from "@/media/dto/media.dto.ts";
 import { IMedia } from "@/media/domain/media.domain.ts";
 
@@ -12,6 +12,6 @@ export interface IMediaStorage {
     limit: number,
     offset: number,
     tx?: IDbTransaction
-  ): Promise<GetMediaByOwnerIdRepoResponse>;
+  ): Promise<GetMediaByOwnerIdRepoResponseDTO>;
   delete(id: string, userId: string, tx?: IDbTransaction): Promise<IMedia | null>;
 }

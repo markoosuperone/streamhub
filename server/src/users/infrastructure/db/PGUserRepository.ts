@@ -1,8 +1,8 @@
 import { getDb } from "@/shared/db/postgres.ts";
 import {
-  CreateUserDto,
-  GetUserByEmailDto,
-  GetUserByIdDto,
+  CreateUserDTO,
+  GetUserByEmailDTO,
+  GetUserByIdDTO,
 } from "@/users/domain/user.dto.ts";
 import { IUserRepository } from "@/users/repository/user.repository.ts";
 import { IUser } from "@/users/domain/user.entity.ts";
@@ -20,7 +20,7 @@ export class PGUserRepository implements IUserRepository {
   constructor(private readonly sql = getDb()) {}
 
   async createUser(
-    { email, password_hash }: CreateUserDto,
+    { email, password_hash }: CreateUserDTO,
     tx?: IDbTransaction
   ): Promise<IUser> {
     const db = (tx ?? this.sql) as DbExecutor;
@@ -41,7 +41,7 @@ export class PGUserRepository implements IUserRepository {
   }
 
   async getUserByEmail(
-    { email }: GetUserByEmailDto,
+    { email }: GetUserByEmailDTO,
     tx?: IDbTransaction
   ): Promise<IUser | null> {
     const db = (tx ?? this.sql) as DbExecutor;
@@ -59,7 +59,7 @@ export class PGUserRepository implements IUserRepository {
   }
 
   async getUserById(
-    { id }: GetUserByIdDto,
+    { id }: GetUserByIdDTO,
     tx?: IDbTransaction
   ): Promise<IUser | null> {
     const db = (tx ?? this.sql) as DbExecutor;
