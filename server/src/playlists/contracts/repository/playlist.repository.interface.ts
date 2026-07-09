@@ -1,6 +1,6 @@
 import { IPlaylist } from "@/playlists/domain/playlist.domain.ts";
-import { PlaylistCreateDTO, PlaylistGetByOwnerIdRepoResponseDTO } from "@/playlists/dto/playlist.dto.ts";
-import { PlaylistUpdateDTO } from "@/playlists/dto/playlist.dto.ts";
+import { PlaylistGetByOwnerIdRepoResponseDTO } from "@/playlists/dto/playlist.dto.ts";
+import { PlaylistCreateDTO, PlaylistUpdateDTO } from "@superplayer/contracts";
 import { IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
 
 export interface IPlaylistRepository {

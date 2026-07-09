@@ -1,23 +1,11 @@
-import { IPlaylistItem } from "../domain/playlist-item.domain.ts";
-
-export interface PlaylistItemCreateDTO {
-  playlist_id: string;
-  media_id: string;
-  position?: number;
-}
+import { PlaylistItemCreateDTO } from "@superplayer/contracts";
+import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";
 
 export type PlaylistItemCreateRecordDTO = PlaylistItemCreateDTO & {
   position: number;
 };
 
-
-
-export interface PlaylistItemUpdateDTO {
-  id: string;
-  position: number;
-}
-
 export interface GetByPlaylistIdRepoResponseDTO {
-  total: number,
-  items: PlaylistItemCreateDTO[]
+  total: number;
+  items: IPlaylistItem[];
 }

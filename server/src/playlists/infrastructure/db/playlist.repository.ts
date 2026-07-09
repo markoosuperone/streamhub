@@ -1,10 +1,7 @@
 import { IPlaylistRepository } from "@/playlists/contracts/repository/playlist.repository.interface.ts";
 import { IPlaylist } from "@/playlists/domain/playlist.domain.ts";
-import {
-  PlaylistCreateDTO,
-  PlaylistGetByOwnerIdRepoResponseDTO,
-  PlaylistUpdateDTO,
-} from "@/playlists/dto/playlist.dto.ts";
+import { PlaylistGetByOwnerIdRepoResponseDTO } from "@/playlists/dto/playlist.dto.ts";
+import { PlaylistCreateDTO, PlaylistUpdateDTO } from "@superplayer/contracts";
 import { IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
 import { getDb } from "@/shared/db/postgres.ts";
 import postgres from "postgres";

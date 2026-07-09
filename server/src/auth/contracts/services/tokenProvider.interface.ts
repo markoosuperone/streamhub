@@ -1,4 +1,5 @@
-import { TokenPairDTO, TokenPayloadDTO } from "@/auth/dto/auth.dto.ts";
+import { TokenPairDTO } from "@superplayer/contracts";
+import { TokenPayloadDTO } from "@/auth/dto/auth.dto.ts";
 import { JwtPayload } from "jsonwebtoken";
 
 type AccessTokenPayload = JwtPayload & {

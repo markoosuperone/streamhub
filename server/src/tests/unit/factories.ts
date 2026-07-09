@@ -1,7 +1,7 @@
 import { Readable } from "node:stream";
 import { IUser } from "@/users/domain/user.entity.ts";
 import { ISession } from "@/auth/domain/session.domain.ts";
-import { TokenPairDTO } from "@/auth/dto/auth.dto.ts";
+import { TokenPairDTO } from "@superplayer/contracts";
 import { IMedia } from "@/media/domain/media.domain.ts";
 import { IPlaylist } from "@/playlists/domain/playlist.domain.ts";
 import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";

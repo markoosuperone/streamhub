@@ -1,4 +1,4 @@
-import { MediaType } from "../dto/media.dto.ts";
+import { MediaType } from "@superplayer/contracts";
 
 export interface IMedia {
   id: string;

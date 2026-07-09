@@ -1,11 +1,10 @@
 import {
-  AuthResultDTO,
-  LoginAuthDTO,
-  RefreshTokenResultDTO,
-  RegisterAuthDTO,
-  toUserDTO,
-  UpdateSessionDTO,
-} from "@/auth/dto/auth.dto.ts";
+  AuthResponseDTO,
+  LoginBodyDTO,
+  RefreshTokenResponseDTO,
+  RegisterBodyDTO,
+} from "@superplayer/contracts";
+import { toUserDTO, UpdateSessionDTO } from "@/auth/dto/auth.dto.ts";
 import { IUserRepository } from "@/users/repository/user.repository.ts";
 import { ISessionRepository } from "@/auth/contracts/repository/session.interface.ts";
 import { IHasher } from "@/auth/contracts/services/hasher.interface.ts";
@@ -21,10 +20,10 @@ import {
 import { logger } from "@/shared/logger/logger.ts";
 
 export interface IAuthUsecase {
-  registerAuth: (auth: RegisterAuthDTO) => Promise<AuthResultDTO>;
-  loginAuth: (auth: LoginAuthDTO) => Promise<AuthResultDTO>;
+  registerAuth: (auth: RegisterBodyDTO) => Promise<AuthResponseDTO>;
+  loginAuth: (auth: LoginBodyDTO) => Promise<AuthResponseDTO>;
   logoutAuth: (sessionId: string) => Promise<void>;
-  refreshToken: (refreshToken: string) => Promise<RefreshTokenResultDTO>;
+  refreshToken: (refreshToken: string) => Promise<RefreshTokenResponseDTO>;
 }
 
 export class AuthUsecase implements IAuthUsecase {
@@ -40,7 +39,7 @@ export class AuthUsecase implements IAuthUsecase {
   async registerAuth({
     email,
     password,
-  }: RegisterAuthDTO): Promise<AuthResultDTO> {
+  }: RegisterBodyDTO): Promise<AuthResponseDTO> {
     // Check if user already exists
     const existingUser = await this.userRepository.getUserByEmail({ email });
     if (existingUser) {
@@ -81,7 +80,7 @@ export class AuthUsecase implements IAuthUsecase {
     });
   }
 
-  async loginAuth({ email, password }: LoginAuthDTO): Promise<AuthResultDTO> {
+  async loginAuth({ email, password }: LoginBodyDTO): Promise<AuthResponseDTO> {
     // Find user by email
     const user = await this.userRepository.getUserByEmail({ email });
     if (!user) {
@@ -122,7 +121,7 @@ export class AuthUsecase implements IAuthUsecase {
     await this.sessionRepository.deleteSession(sessionId);
   }
 
-  async refreshToken(refreshToken: string): Promise<RefreshTokenResultDTO> {
+  async refreshToken(refreshToken: string): Promise<RefreshTokenResponseDTO> {
     const verifyTokenPayload =
       this.tokenProvider.verifyRefreshToken(refreshToken);
     const isInvalidTokenPayload =
