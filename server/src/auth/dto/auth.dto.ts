@@ -23,8 +23,6 @@ export interface SessionDTO {
   expires_at: Date;
 }
 
-export type UpdateSessionDto = Partial<SessionDTO>;
-
 export type TokenPairDTO = {
   access_token: string;
   refresh_token: string;

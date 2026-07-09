@@ -2,8 +2,8 @@ import { ITransactionManager } from "@/transaction/repository/transaction.interf
 import { IPlaylistItemRepository } from "@/playlists/contracts/repository/playlist-item.repository.interface.ts";
 import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";
 import {
-  IPlaylistItemCreateDto,
-  IPlaylistItemUpdateDto,
+  PlaylistItemCreateDTO,
+  PlaylistItemUpdateDTO,
 } from "@/playlists/dto/playlist-item.dto.ts";
 import { PlaylistNotFoundError } from "@/playlists/errors/playlist.errors.ts";
 import {
@@ -21,22 +21,22 @@ import { PaginatedResponse } from "@/shared/types/pagination.types.ts";
 
 export interface IPlaylistItemUsecase {
   createPlaylistItem(
-    playlistItem: IPlaylistItemCreateDto,
+    playlistItem: PlaylistItemCreateDTO,
     user_id: string
-  ): Promise<IPlaylistItem>;
-  getPlaylistItem(id: string, user_id: string): Promise<IPlaylistItem>;
+  ): Promise<PlaylistItemCreateDTO>;
+  getPlaylistItem(id: string, user_id: string): Promise<PlaylistItemCreateDTO>;
   updatePlaylistItem(
     id: string,
-    playlistItem: IPlaylistItemUpdateDto,
+    playlistItem: PlaylistItemUpdateDTO,
     user_id: string
-  ): Promise<IPlaylistItem>;
+  ): Promise<PlaylistItemCreateDTO>;
   deletePlaylistItem(id: string, user_id: string): Promise<void>;
   getByPlaylistId(
     playlistId: string,
     user_id: string,
     limit: number,
     offset: number
-  ): Promise<PaginatedResponse<IPlaylistItem>>;
+  ): Promise<PaginatedResponse<PlaylistItemCreateDTO>>;
 }
 
 export class PlaylistItemUsecase implements IPlaylistItemUsecase {
@@ -48,9 +48,9 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
   ) {}
 
   async createPlaylistItem(
-    playlistItem: IPlaylistItemCreateDto,
+    playlistItem: PlaylistItemCreateDTO,
     user_id: string
-  ): Promise<IPlaylistItem> {
+  ): Promise<PlaylistItemCreateDTO> {
     return await this.transactionManager.withTransaction(async (tx) => {
       const mediaItem = await this.MediaRepository.getById(
         playlistItem.media_id,
@@ -112,7 +112,7 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
     });
   }
 
-  async getPlaylistItem(id: string, user_id: string): Promise<IPlaylistItem> {
+  async getPlaylistItem(id: string, user_id: string): Promise<PlaylistItemCreateDTO> {
     const playlist = await this.playlistItemRepository.getById(id, user_id);
     if (!playlist) {
       throw new PlaylistItemNotFoundError();
@@ -122,9 +122,9 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
 
   async updatePlaylistItem(
     id: string,
-    playlistItem: IPlaylistItemUpdateDto,
+    playlistItem: PlaylistItemUpdateDTO,
     user_id: string
-  ): Promise<IPlaylistItem> {
+  ): Promise<PlaylistItemCreateDTO> {
     return await this.transactionManager.withTransaction(async (tx) => {
       const { position } = playlistItem;
       const playlistItemEntity = await this.playlistItemRepository.getById(
@@ -171,7 +171,7 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
     user_id: string,
     limit: number,
     offset: number
-  ): Promise<PaginatedResponse<IPlaylistItem>> {
+  ): Promise<PaginatedResponse<PlaylistItemCreateDTO>> {
     const playlist = await this.PlaylistRepository.getById(playlistId, user_id);
     if (!playlist) {
       throw new PlaylistNotFoundError();

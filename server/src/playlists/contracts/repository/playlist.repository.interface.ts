@@ -1,17 +1,17 @@
 import { IPlaylist } from "@/playlists/domain/playlist.domain.ts";
-import { IPlaylistCreateDto, IPlaylistGetByOwnerIdRepoResponse } from "@/playlists/dto/playlist.dto.ts";
-import { IPlaylistUpdateDto } from "@/playlists/dto/playlist.dto.ts";
+import { PlaylistCreateDTO, PlaylistGetByOwnerIdRepoResponseDTO } from "@/playlists/dto/playlist.dto.ts";
+import { PlaylistUpdateDTO } from "@/playlists/dto/playlist.dto.ts";
 import { IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
 
 export interface IPlaylistRepository {
-  create(playlist: IPlaylistCreateDto, tx?: IDbTransaction): Promise<IPlaylist>;
+  create(playlist: PlaylistCreateDTO, tx?: IDbTransaction): Promise<IPlaylist>;
   getById(
     id: string,
     user_id: string,
     tx?: IDbTransaction
   ): Promise<IPlaylist | null>;
   update(
-    playlist: IPlaylistUpdateDto,
+    playlist: PlaylistUpdateDTO,
     user_id: string,
     tx?: IDbTransaction
   ): Promise<IPlaylist | null>;
@@ -21,5 +21,5 @@ export interface IPlaylistRepository {
     limit: number,
     offset: number,
     tx?: IDbTransaction
-  ): Promise<IPlaylistGetByOwnerIdRepoResponse>;
+  ): Promise<PlaylistGetByOwnerIdRepoResponseDTO>;
 }

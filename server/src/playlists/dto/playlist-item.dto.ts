@@ -1,23 +1,23 @@
 import { IPlaylistItem } from "../domain/playlist-item.domain.ts";
 
-export interface IPlaylistItemCreateDto {
+export interface PlaylistItemCreateDTO {
   playlist_id: string;
   media_id: string;
   position?: number;
 }
 
-export type IPlaylistItemCreateRecordDto = IPlaylistItemCreateDto & {
+export type PlaylistItemCreateRecordDTO = PlaylistItemCreateDTO & {
   position: number;
 };
 
 
 
-export interface IPlaylistItemUpdateDto {
+export interface PlaylistItemUpdateDTO {
   id: string;
   position: number;
 }
 
-export interface IGetByPlaylistIdRepoResponse {
+export interface GetByPlaylistIdRepoResponseDTO {
   total: number,
-  items: IPlaylistItem[]
+  items: PlaylistItemCreateDTO[]
 }

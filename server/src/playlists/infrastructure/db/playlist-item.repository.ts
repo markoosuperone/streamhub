@@ -1,9 +1,9 @@
 import { IPlaylistItemRepository } from "@/playlists/contracts/repository/playlist-item.repository.interface.ts";
 import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";
 import {
-  IGetByPlaylistIdRepoResponse,
-  IPlaylistItemCreateRecordDto,
-  IPlaylistItemUpdateDto,
+  GetByPlaylistIdRepoResponseDTO,
+  PlaylistItemCreateRecordDTO,
+  PlaylistItemUpdateDTO,
 } from "@/playlists/dto/playlist-item.dto.ts";
 import {
   CreatePlaylistItemRecordError,
@@ -23,7 +23,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
   constructor(private readonly sql = getDb()) {}
 
   async create(
-    playlistItem: IPlaylistItemCreateRecordDto,
+    playlistItem: PlaylistItemCreateRecordDTO,
     tx?: IDbTransaction
   ): Promise<IPlaylistItem> {
     const db = (tx ?? this.sql) as DbExecutor;
@@ -79,7 +79,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     limit: number,
     offset: number,
     tx?: IDbTransaction
-  ): Promise<IGetByPlaylistIdRepoResponse> {
+  ): Promise<GetByPlaylistIdRepoResponseDTO> {
     const db = (tx ?? this.sql) as DbExecutor;
 
     try {
@@ -141,7 +141,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
   }
 
   async update(
-    playlistItem: IPlaylistItemUpdateDto,
+    playlistItem: PlaylistItemUpdateDTO,
     tx?: IDbTransaction
   ): Promise<IPlaylistItem> {
     const db = (tx ?? this.sql) as DbExecutor;
@@ -166,7 +166,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
   }
 
   async updateForOwner(
-    playlistItem: IPlaylistItemUpdateDto,
+    playlistItem: PlaylistItemUpdateDTO,
     ownerId: string,
     tx?: IDbTransaction
   ): Promise<IPlaylistItem> {

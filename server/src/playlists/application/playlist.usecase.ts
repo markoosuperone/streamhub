@@ -1,36 +1,36 @@
 import { IPlaylistRepository } from "@/playlists/contracts/repository/playlist.repository.interface.ts";
 import { IPlaylist } from "@/playlists/domain/playlist.domain.ts";
-import { IPlaylistCreateDto } from "@/playlists/dto/playlist.dto.ts";
-import { IPlaylistUpdateDto } from "@/playlists/dto/playlist.dto.ts";
+import { PlaylistCreateDTO } from "@/playlists/dto/playlist.dto.ts";
+import { PlaylistUpdateDTO } from "@/playlists/dto/playlist.dto.ts";
 import { PlaylistNotFoundError } from "@/playlists/errors/playlist.errors.ts";
 import { PaginatedResponse } from "@/shared/types/pagination.types.ts";
 import { normalizeTitle } from "@/shared/utility/normalizeTitle.ts";
 
 export interface IPlaylistUsecase {
-  createPlaylist(playlist: IPlaylistCreateDto): Promise<IPlaylist>;
-  getPlaylist(id: string, user_id: string): Promise<IPlaylist>;
+  createPlaylist(playlist: PlaylistCreateDTO): Promise<PlaylistCreateDTO>;
+  getPlaylist(id: string, user_id: string): Promise<PlaylistCreateDTO>;
   updatePlaylist(
     id: string,
-    playlist: IPlaylistUpdateDto,
+    playlist: PlaylistUpdateDTO,
     user_id: string
-  ): Promise<IPlaylist>;
+  ): Promise<PlaylistCreateDTO>;
   deletePlaylist(id: string, user_id: string): Promise<void>;
   getPlaylistByOwnerId(
     owner_id: string,
     limit: number,
     offset: number
-  ): Promise<PaginatedResponse<IPlaylist>>;
+  ): Promise<PaginatedResponse<PlaylistCreateDTO>>;
 }
 
 export class PlaylistUsecase implements IPlaylistUsecase {
   constructor(private readonly playlistRepository: IPlaylistRepository) {}
 
-  async createPlaylist(playlist: IPlaylistCreateDto): Promise<IPlaylist> {
+  async createPlaylist(playlist: PlaylistCreateDTO): Promise<IPlaylist> {
     const title = normalizeTitle(playlist.title);
     return await this.playlistRepository.create({ ...playlist, title });
   }
 
-  async getPlaylist(id: string, user_id: string): Promise<IPlaylist> {
+  async getPlaylist(id: string, user_id: string): Promise<PlaylistCreateDTO> {
     const playlist = await this.playlistRepository.getById(id, user_id);
     if (!playlist) {
       throw new PlaylistNotFoundError();
@@ -41,7 +41,7 @@ export class PlaylistUsecase implements IPlaylistUsecase {
     owner_id: string,
     limit: number,
     offset: number
-  ): Promise<PaginatedResponse<IPlaylist>> {
+  ): Promise<PaginatedResponse<PlaylistCreateDTO>> {
     const { total, items } = await this.playlistRepository.getByOwnerId(
       owner_id,
       limit,
@@ -57,9 +57,9 @@ export class PlaylistUsecase implements IPlaylistUsecase {
 
   async updatePlaylist(
     id: string,
-    playlist: IPlaylistUpdateDto,
+    playlist: PlaylistUpdateDTO,
     user_id: string
-  ): Promise<IPlaylist> {
+  ): Promise<PlaylistCreateDTO> {
     const updatedPlaylist = await this.playlistRepository.update(
       { ...playlist, id },
       user_id

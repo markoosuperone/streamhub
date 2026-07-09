@@ -1,4 +1,4 @@
-import { IMedia, MediaType } from "@/media/domain/media.domain.ts";
+export type MediaType = "image" | "video" | "audio";
 
 export interface CreateMediaDTO {
   id: string;
@@ -51,7 +51,7 @@ export interface CreateWriteStreamResultDTO {
   file_path: string;
 }
 
-export interface GetMediaByOwnerIdRepoResponse {
+export interface GetMediaByOwnerIdRepoResponseDTO {
   total: number;
-  items: IMedia[];
+  items: CreateMediaDTO[];
 }

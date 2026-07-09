@@ -1,6 +1,7 @@
 import { IMedia } from "@/media/domain/media.domain.ts";
 
 import {
+  CreateMediaDTO,
   ExecuteMediaInputDTO,
   MediaResponseDTO,
   UploadMediaInputDTO,
@@ -23,7 +24,7 @@ export interface IMediaUsecase {
   getAllItems(
     limit: number,
     offset: number
-  ): Promise<PaginatedResponse<IMedia>>;
+  ): Promise<PaginatedResponse<CreateMediaDTO>>;
   delete(id: string, userId: string): Promise<void>;
 }
 export class MediaUsecase implements IMediaUsecase {
@@ -86,7 +87,7 @@ export class MediaUsecase implements IMediaUsecase {
   async getAllItems(
     limit: number,
     offset: number
-  ): Promise<PaginatedResponse<IMedia>> {
+  ): Promise<PaginatedResponse<CreateMediaDTO>> {
     const { total, items } = await this.mediaRepository.getAllItems(
       limit,
       offset
