@@ -1,8 +1,21 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
+  /* Tells the browser this is a dark-UI page: Chrome's autofill preview text,
+     native form controls, and scrollbars switch to their dark variants */
+  color-scheme: dark;
+
   --background: #ffffff;
   --foreground: #171717;
+
+  --color-brand-bg: #151209;
+  --color-brand-surface: #1d1810;
+  --color-brand-border: rgba(245, 239, 226, 0.09);
+  --color-brand-accent: #dab33a;
+  --color-brand-accent-foreground: #151209;
+  --color-brand-foreground-rgb: 245, 239, 226;
+  --color-brand-placeholder: #757575;
+  --color-brand-error: #f87171;
 }
 
 @theme inline {
@@ -22,5 +35,30 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-space-grotesk), Arial, Helvetica, sans-serif;
+}
+
+/* Slim, on-brand scrollbar everywhere — the default OS scrollbar is wide and
+   only picks up light/dark via color-scheme, not size or accent. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--color-brand-foreground-rgb), 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-brand-foreground-rgb), 0.18);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-brand-foreground-rgb), 0.32);
 }
