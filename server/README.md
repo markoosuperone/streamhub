@@ -132,22 +132,23 @@ Each of `auth`, `media`, and `playlists` mirrors the same `domain/` → `applica
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `POSTGRES_URL` | Yes | — | PostgreSQL host used to build the connection config |
-| `POSTGRES_PORT` | No | `5432` | PostgreSQL port |
-| `POSTGRES_USER` | Yes | — | PostgreSQL username |
-| `POSTGRES_PASSWORD` | Yes | — | PostgreSQL password |
-| `POSTGRES_DB` | Yes | — | PostgreSQL database name |
-| `DATABASE_URL` | Yes | — | Full connection string used by the `postgres.js` client and migration runner |
-| `LOG_LEVEL` | Yes | — | Pino log level: `debug`, `info`, `warn`, or `error` |
-| `HOST` | No | `localhost` | Host/interface the HTTP server binds to |
-| `PORT` | No | `8000` | Port the HTTP server listens on |
-| `JWT_ACCESS_SECRET` | Yes | — | Secret used to sign access tokens |
-| `JWT_REFRESH_SECRET` | Yes | — | Secret used to sign refresh tokens |
-| `JWT_ACCESS_EXPIRES_IN` | No | `3600` | Access token lifetime, in seconds |
-| `JWT_REFRESH_EXPIRES_IN` | No | `86400` | Refresh token lifetime, in seconds |
-| `MAX_FILE_SIZE_BYTES` | No | `524288000` (500 MB) | Maximum accepted upload size |
+| Variable                 | Required | Default              | Description                                                                  |
+| ------------------------ | -------- | -------------------- | ---------------------------------------------------------------------------- |
+| `POSTGRES_URL`           | Yes      | —                    | PostgreSQL host used to build the connection config                          |
+| `POSTGRES_PORT`          | No       | `5432`               | PostgreSQL port                                                              |
+| `POSTGRES_USER`          | Yes      | —                    | PostgreSQL username                                                          |
+| `POSTGRES_PASSWORD`      | Yes      | —                    | PostgreSQL password                                                          |
+| `POSTGRES_DB`            | Yes      | —                    | PostgreSQL database name                                                     |
+| `DATABASE_URL`           | Yes      | —                    | Full connection string used by the `postgres.js` client and migration runner |
+| `LOG_LEVEL`              | Yes      | —                    | Pino log level: `debug`, `info`, `warn`, or `error`                          |
+| `HOST`                   | No       | `localhost`          | Host/interface the HTTP server binds to                                      |
+| `PORT`                   | No       | `8000`               | Port the HTTP server listens on                                              |
+| `JWT_ACCESS_SECRET`      | Yes      | —                    | Secret used to sign access tokens                                            |
+| `JWT_REFRESH_SECRET`     | Yes      | —                    | Secret used to sign refresh tokens                                           |
+| `JWT_ACCESS_EXPIRES_IN`  | No       | `3600`               | Access token lifetime, in seconds                                            |
+| `JWT_REFRESH_EXPIRES_IN` | No       | `86400`              | Refresh token lifetime, in seconds                                           |
+| `MAX_FILE_SIZE_BYTES`    | No       | `524288000` (500 MB) | Maximum accepted upload size                                                 |
+| `COOKIE_SECURE`          | No       | `false`              | Mark auth and CSRF cookies `Secure`; must be `true` in production            |
 
 ## Running
 
@@ -183,10 +184,25 @@ database is required to run the full suite. They run sequentially, since they sh
 
 ### Authentication
 
-- `POST /register` — create a user account, returns tokens and a session
-- `POST /login` — authenticate with email/password, returns tokens and a session
-- `POST /refresh-token` — exchange a valid refresh token for a new, rotated token pair
-- `POST /logout` — revoke the current session
+- `POST /register` — create a user account; returns the user, sets the auth cookies
+- `POST /login` — authenticate with email/password; returns the user, sets the auth cookies
+- `POST /refresh-token` — rotate the pair from the `refresh_token` cookie; `204`, no body
+- `POST /logout` — revoke the current session and clear the auth cookies
+- `GET /csrf-token` — issue a CSRF token for the browser to echo back
+
+Authentication is **cookie-only**. `access_token` and `refresh_token` are `httpOnly`,
+`SameSite=Lax` cookies set by the backend; they never appear in a response body, and an
+`Authorization` header is not accepted. Every `POST`/`PATCH`/`DELETE` must echo a CSRF token in an
+`x-csrf-token` header — see Security below.
+
+An expired access token normally needs no action: a request presenting a valid `refresh_token`
+cookie has its pair renewed in flight, so `POST /refresh-token` is only for forcing rotation.
+
+### Users
+
+- `GET /me` — get the calling user's profile
+- `GET /users` — list users (paginated)
+- `GET /users/:id` — get a user by id
 
 ### Playlists
 
@@ -209,6 +225,7 @@ database is required to run the full suite. They run sequentially, since they sh
 - `POST /media/upload` — upload an audio/video file (multipart)
 - `GET /media` — list media (paginated)
 - `GET /media/:mediaId` — stream a media file, with HTTP Range support
+- `GET /media/:mediaId/thumbnail` — get a video's preview image (generated at upload)
 - `DELETE /media/:mediaId` — delete a media item (file and record)
 
 Media is a shared library: any authenticated user can list and stream any item. Ownership is
@@ -251,7 +268,11 @@ carrying an explicit HTTP status code (e.g. `PlaylistNotFoundError` → 404, `Us
 a consistent JSON response:
 
 ```json
-{ "statusCode": 404, "error": "PlaylistNotFoundError", "message": "Playlist not found" }
+{
+  "statusCode": 404,
+  "error": "PlaylistNotFoundError",
+  "message": "Playlist not found"
+}
 ```
 
 Expected business errors (4xx) aren't logged as failures. Unexpected exceptions and infrastructure
