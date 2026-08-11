@@ -1,0 +1,28 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  height: 65px;
+  padding: 0 24px;
+  border-bottom: 1px solid rgba(var(--color-brand-foreground-rgb), 0.08);
+  background: var(--color-brand-bg);
+}
+
+.nav {
+  display: flex;
+  gap: 6px;
+}
+
+.navItem {
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.navItem:active {
+  transform: scale(0.96);
+}

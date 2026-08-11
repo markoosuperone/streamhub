@@ -1,0 +1,72 @@
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 300px;
+  flex-shrink: 0;
+  min-height: 0;
+  padding: 20px;
+  border-right: 1px solid rgba(var(--color-brand-foreground-rgb), 0.08);
+  background: #1a160c;
+}
+
+.playerArea {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  color: rgba(var(--color-brand-foreground-rgb), 0.4);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.47px;
+}
+
+.upNext {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upNextList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.upNextItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px;
+  border-radius: 10px;
+  font-family: inherit;
+  text-align: left;
+}
+
+.upNextThumb {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.upNextTitle {
+  overflow: hidden;
+  color: rgb(var(--color-brand-foreground-rgb));
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
