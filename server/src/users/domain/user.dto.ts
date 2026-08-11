@@ -1,4 +1,4 @@
-
+import { UserDTO } from "@superplayer/contracts";
 
 export interface CreateUserDTO {
   email: string;
@@ -10,5 +10,10 @@ export interface GetUserByEmailDTO {
 }
 
 export interface GetUserByIdDTO {
-  id: number;
+  id: string;
+}
+
+export interface GetAllUsersRepoResponseDTO {
+  items: UserDTO[];
+  total: number;
 }

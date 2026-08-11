@@ -1,6 +1,8 @@
+import { UserDTO } from "@superplayer/contracts";
 import { getDb } from "@/shared/db/postgres.ts";
 import {
   CreateUserDTO,
+  GetAllUsersRepoResponseDTO,
   GetUserByEmailDTO,
   GetUserByIdDTO,
 } from "@/users/domain/user.dto.ts";
@@ -8,10 +10,7 @@ import { IUserRepository } from "@/users/repository/user.repository.ts";
 import { IUser } from "@/users/domain/user.entity.ts";
 import postgres from "postgres";
 import { IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
-import {
-  CreateUserError,
-  GetUserRecordError,
-} from "@/auth/error/errors.ts";
+import { CreateUserError, GetUserRecordError } from "@/auth/error/errors.ts";
 import { logger, markLogged } from "@/shared/logger/logger.ts";
 
 type DbExecutor = postgres.Sql;
@@ -21,7 +20,7 @@ export class PGUserRepository implements IUserRepository {
 
   async createUser(
     { email, password_hash }: CreateUserDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IUser> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -42,7 +41,7 @@ export class PGUserRepository implements IUserRepository {
 
   async getUserByEmail(
     { email }: GetUserByEmailDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IUser | null> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -60,16 +59,42 @@ export class PGUserRepository implements IUserRepository {
 
   async getUserById(
     { id }: GetUserByIdDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IUser | null> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
-      const [user] = await db<
-        IUser[]
-      >`SELECT * FROM users WHERE id = ${id}`;
+      const [user] = await db<IUser[]>`SELECT * FROM users WHERE id = ${id}`;
       return user ?? null;
     } catch (error) {
-      logger.error({ err: error, userId: id }, "Failed to get user record by id");
+      logger.error(
+        { err: error, userId: id },
+        "Failed to get user record by id",
+      );
+      const wrapped = new GetUserRecordError();
+      markLogged(wrapped);
+      throw wrapped;
+    }
+  }
+
+  async getAllUsers(
+    limit: number,
+    offset: number,
+    tx?: IDbTransaction,
+  ): Promise<GetAllUsersRepoResponseDTO> {
+    const db = (tx ?? this.sql) as DbExecutor;
+    try {
+      const [countRow] = await db<
+        { count: number }[]
+      >`SELECT COUNT(*)::int AS count FROM users`;
+      const items = await db<UserDTO[]>`
+      SELECT id AS user_id, email FROM users
+      ORDER BY created_at DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+      `;
+      return { items, total: countRow?.count ?? 0 };
+    } catch (error) {
+      logger.error({ err: error }, "Failed to get user records");
       const wrapped = new GetUserRecordError();
       markLogged(wrapped);
       throw wrapped;
