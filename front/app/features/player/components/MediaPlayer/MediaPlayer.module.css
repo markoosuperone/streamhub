@@ -1,0 +1,103 @@
+.player {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.video {
+  width: 100%;
+  border-radius: 14px;
+  background: #000;
+}
+
+.artwork {
+  aspect-ratio: 1;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trackTitle {
+  margin: 0;
+  overflow: hidden;
+  color: rgb(var(--color-brand-foreground-rgb));
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.trackSubtitle {
+  margin: 0;
+  overflow: hidden;
+  color: rgba(var(--color-brand-foreground-rgb), 0.5);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.progress {
+  position: relative;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(var(--color-brand-foreground-rgb), 0.15);
+  cursor: pointer;
+}
+
+.progressFill {
+  position: relative;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--color-brand-accent);
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-brand-accent);
+  transform: translateY(-50%);
+}
+
+.times {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(var(--color-brand-foreground-rgb), 0.5);
+  font-size: 10.5px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding-top: 2px;
+}
+
+.skip {
+  display: flex;
+  padding: 4px;
+  color: rgba(var(--color-brand-foreground-rgb), 0.8);
+}
+
+.skip:disabled {
+  opacity: 0.35;
+}
+
+.playToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+}

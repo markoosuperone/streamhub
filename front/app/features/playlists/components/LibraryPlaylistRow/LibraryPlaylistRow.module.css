@@ -1,0 +1,43 @@
+.playlistRow,
+.playlistRowSelected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.playlistRow:hover {
+  background: rgba(var(--color-brand-foreground-rgb), 0.05);
+}
+
+.playlistRowSelected {
+  background: rgba(var(--color-brand-foreground-rgb), 0.06);
+  border: 1px solid rgba(var(--color-brand-foreground-rgb), 0.16);
+}
+
+.playlistName,
+.playlistNameSelected {
+  flex: 1;
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.playlistName {
+  color: rgb(var(--color-brand-foreground-rgb));
+}
+
+.playlistNameSelected {
+  color: var(--color-brand-accent);
+}
+
+.playlistCount {
+  flex: none;
+  color: rgba(var(--color-brand-foreground-rgb), 0.45);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}

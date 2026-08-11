@@ -1,0 +1,23 @@
+.account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  color: rgb(var(--color-brand-foreground-rgb));
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.signOut {
+  color: rgba(var(--color-brand-foreground-rgb), 0.5);
+  font-family: inherit;
+  font-size: 12px;
+}

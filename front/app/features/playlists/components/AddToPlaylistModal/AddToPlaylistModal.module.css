@@ -1,0 +1,110 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-family: inherit;
+  text-align: left;
+}
+
+.rowTitle {
+  overflow: hidden;
+  color: rgb(var(--color-brand-foreground-rgb));
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.status {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  color: rgba(var(--color-brand-foreground-rgb), 0.4);
+  font-size: 11px;
+}
+
+.statusAdded {
+  flex-shrink: 0;
+  color: var(--color-brand-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-brand-error);
+}
+
+.newPlaylist {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.createForm {
+  display: flex;
+  gap: 6px;
+}
+
+.createInput {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(var(--color-brand-foreground-rgb), 0.14);
+  border-radius: 10px;
+  background: rgba(var(--color-brand-foreground-rgb), 0.05);
+  color: rgb(var(--color-brand-foreground-rgb));
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.createInput::placeholder {
+  color: var(--color-brand-placeholder);
+}
+
+.createInput:focus {
+  outline: none;
+  border-color: var(--color-brand-accent);
+}
+
+.createInput:disabled {
+  opacity: 0.6;
+}
+
+.createSubmit {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
