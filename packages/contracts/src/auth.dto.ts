@@ -13,19 +13,12 @@ export interface LoginBodyDTO {
   password: string;
 }
 
-export type TokenPairDTO = {
-  access_token: string;
-  refresh_token: string;
-  access_token_expires_at: Date;
-  refresh_token_expires_at: Date;
-};
-
-export interface AuthResponseDTO extends TokenPairDTO {
+// Tokens are deliberately absent: they travel as httpOnly cookies, so they are
+// never part of a response body the browser can read.
+export interface AuthResponseDTO {
   user: UserDTO;
-  session_id: string;
 }
 
-export interface RefreshTokenResponseDTO {
-  access_token: string;
-  refresh_token: string;
+export interface CsrfTokenDTO {
+  csrf_token: string;
 }
