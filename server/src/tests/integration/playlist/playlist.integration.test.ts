@@ -41,7 +41,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlists",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "Party Time" },
       });
 
@@ -51,6 +52,7 @@ describe("Playlist routes", () => {
         id: expect.any(String),
         owner_id: user.user_id,
         title: "Party Time",
+        total_items: 0,
       });
 
       const db = getDb();
@@ -67,7 +69,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlists",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "  Road Trip  " },
       });
 
@@ -81,7 +84,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlists",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "" },
       });
 
@@ -94,7 +98,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlists",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "   " },
       });
 
@@ -110,7 +115,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlists",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: {},
       });
 
@@ -138,7 +144,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(200);
@@ -146,7 +153,34 @@ describe("Playlist routes", () => {
         id: playlist.id,
         owner_id: user.user_id,
         title: "Weekend Mix",
+        total_items: 0,
       });
+    });
+
+    it("reflects the number of items added to the playlist", async () => {
+      const user = await registerUser(app, "get-item-count@test.com");
+      const playlist = await createPlaylist(app, user, "Weekend Mix");
+      const mediaOne = await seedMediaRecord(user.user_id);
+      const mediaTwo = await seedMediaRecord(user.user_id);
+
+      for (const media of [mediaOne, mediaTwo]) {
+        await app.inject({
+          method: "POST",
+          url: "/playlist-items",
+          cookies: user.cookies,
+          headers: user.headers,
+          payload: { playlist_id: playlist.id, media_id: media.id },
+        });
+      }
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/playlists/${playlist.id}`,
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(JSON.parse(res.body)).toMatchObject({ total_items: 2 });
     });
 
     it("returns 404 for a playlist id that does not exist", async () => {
@@ -155,7 +189,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlists/${randomUUID()}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -172,7 +207,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -187,7 +223,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/playlists/not-a-uuid",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -211,7 +248,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/playlists",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(200);
@@ -232,7 +270,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/playlists",
-        headers: { authorization: owner.authHeader },
+        cookies: owner.cookies,
+        headers: owner.headers,
       });
 
       const body = JSON.parse(res.body);
@@ -241,6 +280,7 @@ describe("Playlist routes", () => {
       expect(body.items[0]).toMatchObject({
         title: "Party Time",
         owner_id: owner.user_id,
+        total_items: 0,
       });
     });
 
@@ -253,7 +293,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/playlists?limit=2&offset=1",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       const body = JSON.parse(res.body);
@@ -267,7 +308,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/playlists?limit=0",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -279,7 +321,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/playlists?offset=-1",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -301,7 +344,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "Updated Title" },
       });
 
@@ -309,6 +353,7 @@ describe("Playlist routes", () => {
       expect(JSON.parse(res.body)).toMatchObject({
         id: playlist.id,
         title: "Updated Title",
+        total_items: 0,
       });
 
       const db = getDb();
@@ -322,7 +367,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlists/${randomUUID()}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "Updated Title" },
       });
 
@@ -337,7 +383,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
         payload: { title: "Hijacked" },
       });
 
@@ -355,7 +402,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "" },
       });
 
@@ -369,7 +417,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "   " },
       });
 
@@ -385,7 +434,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: "/playlists/not-a-uuid",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { title: "Updated Title" },
       });
 
@@ -413,7 +463,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(204);
@@ -431,14 +482,16 @@ describe("Playlist routes", () => {
       await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlist.id, media_id: media.id },
       });
 
       const res = await app.inject({
         method: "DELETE",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(204);
@@ -455,7 +508,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/playlists/${randomUUID()}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -469,7 +523,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/playlists/${playlist.id}`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -485,7 +540,8 @@ describe("Playlist routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: "/playlists/not-a-uuid",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);

@@ -10,6 +10,7 @@ export interface IMedia {
   size_bytes: number;
   duration_seconds: number;
   title: string;
+  has_thumbnail: boolean;
   created_at: Date;
   updated_at: Date;
-} 
+}

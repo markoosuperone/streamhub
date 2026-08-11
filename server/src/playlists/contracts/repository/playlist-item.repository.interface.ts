@@ -4,65 +4,67 @@ import {
   GetByPlaylistIdRepoResponseDTO,
   PlaylistItemCreateRecordDTO,
 } from "@/playlists/dto/playlist-item.dto.ts";
-import { PlaylistItemUpdateDTO } from "@superplayer/contracts";
+import { MediaType, PlaylistItemUpdateDTO } from "@superplayer/contracts";
 
 export interface IPlaylistItemRepository {
   create(
     playlistItem: PlaylistItemCreateRecordDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem>;
   getById(
     id: string,
     ownerId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem | null>;
   getByPlaylistIdPaginated(
-    playlist_id: string,
+    playlistId: string,
     ownerId: string,
     limit: number,
     offset: number,
+    search?: string,
+    mediaType?: MediaType,
     tx?: IDbTransaction,
   ): Promise<GetByPlaylistIdRepoResponseDTO>;
   getByPlaylistId(
-    playlist_id: string,
+    playlistId: string,
     ownerId: string,
     tx?: IDbTransaction,
   ): Promise<IPlaylistItem[]>;
   update(
     playlistItem: PlaylistItemUpdateDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem>;
   updateForOwner(
     playlistItem: PlaylistItemUpdateDTO,
     ownerId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem>;
 
   deleteForOwner(
     id: string,
     ownerId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem | null>;
   getByPlaylistIdAndPosition(
     playlistId: string,
     position: number,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem[]>;
   decrementPosition(
     fromPosition: number,
     toPosition: number,
     playlistId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<boolean>;
   incrementPosition(
     fromPosition: number,
     toPosition: number,
     playlistId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<boolean>;
   decrementPositionsAfter(
     playlistId: string,
     deletedPosition: number,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<void>;
 }

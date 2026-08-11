@@ -9,6 +9,7 @@ import {
   InvalidFilePathError,
   InvalidRangeFormatError,
   RangeNotSatisfiableError,
+  ThumbnailNotFoundError,
   UnsupportedFileTypeError,
 } from "@/media/errors/media.errors.ts";
 import { SizeLimitStream } from "@/shared/stream/stream-limit.ts";
@@ -20,6 +21,7 @@ import {
   dirname,
   extname,
   isAbsolute,
+  join,
   relative,
   resolve,
 } from "node:path";
@@ -30,13 +32,14 @@ import { promisify } from "node:util";
 import { logger, markLogged } from "@/shared/logger/logger.ts";
 
 const STORAGE_DIR = "storage";
+const THUMBNAIL_FILE_NAME = "thumb.jpg";
 const execFileAsync = promisify(execFile);
 
 export class FileService implements IFileService {
   constructor() {}
 
   async createWriteStream(
-    input: CreateWriteStreamInputDTO
+    input: CreateWriteStreamInputDTO,
   ): Promise<CreateWriteStreamResultDTO> {
     const { stream, mime_type, file_name, id: mediaId } = input;
     const file_path = input.owner_id + "/" + mediaId;
@@ -52,18 +55,22 @@ export class FileService implements IFileService {
     const restoredStream = this.restoreStream(stream, firstChunk);
     const sizeLimiter = new SizeLimitStream(
       MAX_SIZE,
-      () => new FileSizeLimitExceededError()
+      () => new FileSizeLimitExceededError(),
     );
     try {
       await fs.promises.mkdir(dirname(fullPath), { recursive: true });
-      await pipeline(restoredStream, sizeLimiter, fs.createWriteStream(fullPath));
+      await pipeline(
+        restoredStream,
+        sizeLimiter,
+        fs.createWriteStream(fullPath),
+      );
     } catch (error) {
       if (error instanceof FileSizeLimitExceededError) {
         throw error;
       }
       logger.error(
         { err: error, mediaId, ownerId: input.owner_id },
-        "Failed to write media file to disk"
+        "Failed to write media file to disk",
       );
       markLogged(error);
       throw error;
@@ -73,7 +80,7 @@ export class FileService implements IFileService {
   }
   private restoreStream(
     stream: NodeJS.ReadableStream,
-    firstChunk: Buffer
+    firstChunk: Buffer,
   ): NodeJS.ReadableStream {
     const restoredStream = new PassThrough();
 
@@ -90,7 +97,7 @@ export class FileService implements IFileService {
   async createReadStreamWithRange(
     file_path: string,
     mime_type: string,
-    range: string
+    range: string,
   ): Promise<{
     stream: NodeJS.ReadableStream;
     headers: Record<string, string>;
@@ -101,7 +108,10 @@ export class FileService implements IFileService {
     try {
       stat = await fs.promises.stat(safePath);
     } catch (error) {
-      logger.error({ err: error, filePath: file_path }, "Failed to stat media file");
+      logger.error(
+        { err: error, filePath: file_path },
+        "Failed to stat media file",
+      );
       markLogged(error);
       throw error;
     }
@@ -166,25 +176,91 @@ export class FileService implements IFileService {
   async getMediaDuration(filePath: string): Promise<number> {
     let stdout: string;
     try {
-      ({ stdout } = await execFileAsync(
-        "ffprobe",
-        [
-          "-v",
-          "error",
-          "-show_entries",
-          "format=duration",
-          "-of",
-          "default=noprint_wrappers=1:nokey=1",
-          filePath,
-        ]
-      ));
+      ({ stdout } = await execFileAsync("ffprobe", [
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        filePath,
+      ]));
     } catch (error) {
-      logger.error({ err: error, filePath }, "ffprobe failed to read media duration");
+      logger.error(
+        { err: error, filePath },
+        "ffprobe failed to read media duration",
+      );
       markLogged(error);
       throw error;
     }
 
     return Math.round(Number(stdout.trim()));
+  }
+
+  /** Best-effort: a missing thumbnail must never fail the upload, so ffmpeg
+   *  errors are logged here and reported as `false` instead of thrown. */
+  async generateThumbnail(filePath: string): Promise<boolean> {
+    const safePath = this.normalizeFilePath(filePath);
+    const thumbPath = this.thumbnailPath(safePath);
+
+    // -ss 1 skips a typically-black first frame; videos shorter than that
+    // produce no output, so fall back to the very first frame.
+    for (const seekArgs of [["-ss", "1"], []]) {
+      try {
+        await execFileAsync("ffmpeg", [
+          "-y",
+          ...seekArgs,
+          "-i",
+          safePath,
+          "-frames:v",
+          "1",
+          "-vf",
+          "scale=480:-2",
+          "-q:v",
+          "4",
+          thumbPath,
+        ]);
+        const stats = await fs.promises.stat(thumbPath);
+        if (stats.size > 0) {
+          return true;
+        }
+      } catch {
+        // fall through to the next attempt
+      }
+    }
+
+    logger.warn({ filePath }, "Failed to generate video thumbnail");
+    return false;
+  }
+
+  async createThumbnailReadStream(
+    filePath: string,
+  ): Promise<{ stream: NodeJS.ReadableStream; size: number }> {
+    const thumbPath = this.thumbnailPath(this.normalizeFilePath(filePath));
+    let stats: fs.Stats;
+    try {
+      stats = await fs.promises.stat(thumbPath);
+    } catch {
+      throw new ThumbnailNotFoundError();
+    }
+    return { stream: fs.createReadStream(thumbPath), size: stats.size };
+  }
+
+  /** Best-effort cleanup: an orphaned thumbnail must not block media deletion. */
+  async deleteThumbnail(filePath: string): Promise<void> {
+    const thumbPath = this.thumbnailPath(this.normalizeFilePath(filePath));
+    try {
+      await fs.promises.unlink(thumbPath);
+    } catch (e: unknown) {
+      const err = e as NodeJS.ErrnoException;
+      if (err.code !== "ENOENT") {
+        logger.error({ err, filePath }, "Failed to delete media thumbnail");
+      }
+    }
+  }
+
+  private thumbnailPath(safeMediaPath: string): string {
+    return join(dirname(safeMediaPath), THUMBNAIL_FILE_NAME);
   }
 
   normalizeFileName(fileName: string): { ext: string; sanitized: string } {
@@ -255,14 +331,14 @@ export class FileService implements IFileService {
           detectedMimeType: mediaType?.mime ?? null,
           detectedExtension: mediaType?.ext ?? null,
         },
-        "Uploaded file content does not match its declared type"
+        "Uploaded file content does not match its declared type",
       );
       throw new UnsupportedFileTypeError();
     }
     return { ext, mime: mediaType.mime, sanitized };
   }
   private detectMediaType(
-    buffer: Buffer
+    buffer: Buffer,
   ): { ext: string; mime: string } | null {
     if (this.isMp4(buffer)) {
       return { ext: ".mp4", mime: "video/mp4" };
@@ -348,7 +424,7 @@ export class FileService implements IFileService {
         buffer.subarray(8, 12).toString("ascii") === "mp42")
     );
   }
-  async stat(filePath: string): Promise<{ size: number;}> {
+  async stat(filePath: string): Promise<{ size: number }> {
     try {
       const stats = await stat(filePath);
       return {
@@ -363,7 +439,7 @@ export class FileService implements IFileService {
 
   private parseRange(
     range: string,
-    fileSize: number
+    fileSize: number,
   ): { start: number; end: number } {
     if (fileSize === 0) {
       throw new FileSizeIsZeroError();
@@ -437,7 +513,10 @@ export class FileService implements IFileService {
       await fs.promises.stat(safePath);
       await fs.promises.unlink(safePath);
     } catch (error) {
-      logger.error({ err: error, filePath }, "Failed to delete media file from disk");
+      logger.error(
+        { err: error, filePath },
+        "Failed to delete media file from disk",
+      );
       markLogged(error);
       throw error;
     }

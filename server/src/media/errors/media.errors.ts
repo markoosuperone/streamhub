@@ -14,6 +14,7 @@ const MediaErrors = {
   DELETE_MEDIA_RECORD_ERROR: "Failed to delete media record",
   FILE_NOT_FOUND: "File not found",
   FILE_SIZE_LIMIT_EXCEEDED: "File size limit exceeded",
+  THUMBNAIL_NOT_FOUND: "Thumbnail not found",
 } as const;
 export class MediaNotFoundError extends CustomError {
   constructor() {
@@ -101,5 +102,12 @@ export class FileSizeLimitExceededError extends CustomError {
   constructor() {
     super(MediaErrors.FILE_SIZE_LIMIT_EXCEEDED, 400);
     this.name = "FileSizeLimitExceededError";
+  }
+}
+
+export class ThumbnailNotFoundError extends CustomError {
+  constructor() {
+    super(MediaErrors.THUMBNAIL_NOT_FOUND, 404);
+    this.name = "ThumbnailNotFoundError";
   }
 }

@@ -1,10 +1,21 @@
-import { describe, it, expect, vi, beforeEach, type MockedObject } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  type MockedObject,
+} from "vitest";
 import { IMediaStorage } from "@/media/contracts/repository/mediaStorage.interface.ts";
 import { IFileService } from "@/media/contracts/services/fileService.interface.ts";
 import { MediaUsecase } from "@/media/application/media.usecase.ts";
 import { MediaNotFoundError } from "@/media/errors/media.errors.ts";
 import { makeMedia, makeStream } from "@/tests/unit/factories.ts";
-import { mockMediaRepository, mockFileService, mockUuidGenerator } from "@/tests/unit/mocks.ts";
+import {
+  mockMediaRepository,
+  mockFileService,
+  mockUuidGenerator,
+} from "@/tests/unit/mocks.ts";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -31,7 +42,11 @@ describe("MediaUsecase", () => {
     vi.clearAllMocks();
     mediaRepository = mockMediaRepository();
     fileService = mockFileService();
-    usecase = new MediaUsecase(mediaRepository, fileService, mockUuidGenerator());
+    usecase = new MediaUsecase(
+      mediaRepository,
+      fileService,
+      mockUuidGenerator(),
+    );
   });
 
   // ── upload ──────────────────────────────────────────────────────────────────
@@ -44,6 +59,28 @@ describe("MediaUsecase", () => {
       owner_id: OWNER_ID,
       media_type: MEDIA_TYPE,
       description: DESCRIPTION,
+    });
+
+    it("generates a thumbnail for video uploads", async () => {
+      fileService.createWriteStream.mockResolvedValue({ file_path: FILE_PATH });
+      fileService.stat.mockResolvedValue({ size: SIZE_BYTES });
+      fileService.getMediaDuration.mockResolvedValue(DURATION_SECONDS);
+      mediaRepository.create.mockResolvedValue(makeMedia());
+
+      await usecase.upload(buildInput());
+
+      expect(fileService.generateThumbnail).toHaveBeenCalledWith(FILE_PATH);
+    });
+
+    it("attempts cover-art extraction for audio uploads", async () => {
+      fileService.createWriteStream.mockResolvedValue({ file_path: FILE_PATH });
+      fileService.stat.mockResolvedValue({ size: SIZE_BYTES });
+      fileService.getMediaDuration.mockResolvedValue(DURATION_SECONDS);
+      mediaRepository.create.mockResolvedValue(makeMedia());
+
+      await usecase.upload({ ...buildInput(), media_type: "audio" });
+
+      expect(fileService.generateThumbnail).toHaveBeenCalledWith(FILE_PATH);
     });
 
     it("creates the file and persists the media record", async () => {
@@ -65,23 +102,29 @@ describe("MediaUsecase", () => {
           duration_seconds: DURATION_SECONDS,
           media_type: MEDIA_TYPE,
           description: DESCRIPTION,
-        })
+        }),
       );
     });
 
     it("deletes the file and re-throws when mediaRepository.create fails", async () => {
       const dbError = new Error("DB unavailable");
-      fileService.createWriteStream.mockResolvedValue({ file_path: FAIL_FILE_PATH });
+      fileService.createWriteStream.mockResolvedValue({
+        file_path: FAIL_FILE_PATH,
+      });
       fileService.stat.mockResolvedValue({ size: SIZE_BYTES });
       fileService.getMediaDuration.mockResolvedValue(30);
       mediaRepository.create.mockRejectedValue(dbError);
 
-      await expect(usecase.upload(buildInput())).rejects.toThrow("DB unavailable");
+      await expect(usecase.upload(buildInput())).rejects.toThrow(
+        "DB unavailable",
+      );
       expect(fileService.deleteFile).toHaveBeenCalledWith(FAIL_FILE_PATH);
     });
 
     it("deletes the file and re-throws when stat fails", async () => {
-      fileService.createWriteStream.mockResolvedValue({ file_path: FAIL_FILE_PATH });
+      fileService.createWriteStream.mockResolvedValue({
+        file_path: FAIL_FILE_PATH,
+      });
       fileService.stat.mockRejectedValue(new Error("stat error"));
 
       await expect(usecase.upload(buildInput())).rejects.toThrow("stat error");
@@ -113,7 +156,7 @@ describe("MediaUsecase", () => {
       expect(fileService.createReadStreamWithRange).toHaveBeenCalledWith(
         media.file_path,
         media.mime_type,
-        BYTE_RANGE
+        BYTE_RANGE,
       );
       expect(result).toEqual(streamResult);
     });
@@ -122,7 +165,7 @@ describe("MediaUsecase", () => {
       mediaRepository.getById.mockResolvedValue(null);
 
       await expect(
-        usecase.execute({ mediaId: "missing", userId: USER_ID })
+        usecase.execute({ mediaId: "missing", userId: USER_ID }),
       ).rejects.toThrow(MediaNotFoundError);
       expect(fileService.createReadStreamWithRange).not.toHaveBeenCalled();
     });
@@ -137,7 +180,12 @@ describe("MediaUsecase", () => {
 
       const result = await usecase.getAllItems(10, 20);
 
-      expect(mediaRepository.getAllItems).toHaveBeenCalledWith(10, 20);
+      expect(mediaRepository.getAllItems).toHaveBeenCalledWith(
+        10,
+        20,
+        undefined,
+        undefined,
+      );
       expect(result).toEqual({ items, total: 50, limit: 10, offset: 20 });
     });
 
@@ -148,6 +196,51 @@ describe("MediaUsecase", () => {
 
       expect(result).toEqual({ items: [], total: 0, limit: 5, offset: 0 });
     });
+
+    it("passes the search term through to the repository", async () => {
+      const items = [makeMedia({ title: "Lo-Fi Beats" })];
+      mediaRepository.getAllItems.mockResolvedValue({ total: 1, items });
+
+      const result = await usecase.getAllItems(10, 0, "lo-fi");
+
+      expect(mediaRepository.getAllItems).toHaveBeenCalledWith(
+        10,
+        0,
+        "lo-fi",
+        undefined,
+      );
+      expect(result).toEqual({ items, total: 1, limit: 10, offset: 0 });
+    });
+
+    it("passes the media type through to the repository", async () => {
+      const items = [makeMedia({ media_type: "audio" })];
+      mediaRepository.getAllItems.mockResolvedValue({ total: 1, items });
+
+      const result = await usecase.getAllItems(10, 0, undefined, "audio");
+
+      expect(mediaRepository.getAllItems).toHaveBeenCalledWith(
+        10,
+        0,
+        undefined,
+        "audio",
+      );
+      expect(result).toEqual({ items, total: 1, limit: 10, offset: 0 });
+    });
+
+    it("passes both search and media type through to the repository", async () => {
+      const items = [makeMedia({ title: "Lo-Fi Beats", media_type: "audio" })];
+      mediaRepository.getAllItems.mockResolvedValue({ total: 1, items });
+
+      const result = await usecase.getAllItems(10, 0, "lo-fi", "audio");
+
+      expect(mediaRepository.getAllItems).toHaveBeenCalledWith(
+        10,
+        0,
+        "lo-fi",
+        "audio",
+      );
+      expect(result).toEqual({ items, total: 1, limit: 10, offset: 0 });
+    });
   });
 
   // ── delete ───────────────────────────────────────────────────────────────────
@@ -157,9 +250,9 @@ describe("MediaUsecase", () => {
       const media = makeMedia();
       mediaRepository.delete.mockResolvedValue(media);
 
-      await usecase.delete(MEDIA_ID);
+      await usecase.delete(MEDIA_ID, USER_ID);
 
-      expect(mediaRepository.delete).toHaveBeenCalledWith(MEDIA_ID);
+      expect(mediaRepository.delete).toHaveBeenCalledWith(MEDIA_ID, USER_ID);
       expect(fileService.deleteFile).toHaveBeenCalledWith(media.file_path);
     });
 
@@ -167,8 +260,48 @@ describe("MediaUsecase", () => {
       mediaRepository.getById.mockResolvedValue(makeMedia());
       mediaRepository.delete.mockResolvedValue(null);
 
-      await expect(usecase.delete(MEDIA_ID)).rejects.toThrow(MediaNotFoundError);
+      await expect(usecase.delete(MEDIA_ID, USER_ID)).rejects.toThrow(
+        MediaNotFoundError,
+      );
       expect(fileService.deleteFile).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── getThumbnail ─────────────────────────────────────────────────────────────
+
+  describe("getThumbnail", () => {
+    it("returns the thumbnail stream with image headers", async () => {
+      const media = makeMedia();
+      const stream = makeStream();
+      mediaRepository.getById.mockResolvedValue(media);
+      fileService.createThumbnailReadStream.mockResolvedValue({
+        stream,
+        size: 123,
+      });
+
+      const result = await usecase.getThumbnail(MEDIA_ID);
+
+      expect(mediaRepository.getById).toHaveBeenCalledWith(MEDIA_ID);
+      expect(fileService.createThumbnailReadStream).toHaveBeenCalledWith(
+        media.file_path,
+      );
+      expect(result).toEqual({
+        stream,
+        statusCode: 200,
+        headers: {
+          "Content-Type": "image/jpeg",
+          "Content-Length": "123",
+        },
+      });
+    });
+
+    it("throws MediaNotFoundError when the media record does not exist", async () => {
+      mediaRepository.getById.mockResolvedValue(null);
+
+      await expect(usecase.getThumbnail(MEDIA_ID)).rejects.toThrow(
+        MediaNotFoundError,
+      );
+      expect(fileService.createThumbnailReadStream).not.toHaveBeenCalled();
     });
   });
 });

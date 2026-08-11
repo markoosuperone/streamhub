@@ -5,13 +5,13 @@ import {
 
 export interface IFileService {
   createWriteStream(
-    input: CreateWriteStreamInputDTO
+    input: CreateWriteStreamInputDTO,
   ): Promise<CreateWriteStreamResultDTO>;
   createReadStream(file_path: string): Promise<NodeJS.ReadableStream>;
   createReadStreamWithRange(
     file_path: string,
     mime_type: string,
-    range: string
+    range: string,
   ): Promise<{
     stream: NodeJS.ReadableStream;
     headers: Record<string, string>;
@@ -20,6 +20,11 @@ export interface IFileService {
   normalizeFileName(fileName: string): { ext: string; sanitized: string };
   normalizeFilePath(filePath: string): string;
   deleteFile(filePath: string): Promise<boolean>;
-  stat(filePath: string): Promise<{ size: number;}>;
+  stat(filePath: string): Promise<{ size: number }>;
   getMediaDuration(filePath: string): Promise<number>;
+  generateThumbnail(filePath: string): Promise<boolean>;
+  createThumbnailReadStream(
+    filePath: string,
+  ): Promise<{ stream: NodeJS.ReadableStream; size: number }>;
+  deleteThumbnail(filePath: string): Promise<void>;
 }

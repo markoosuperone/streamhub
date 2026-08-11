@@ -12,7 +12,7 @@ export function getDb(): ReturnType<typeof postgres> {
         conn: number,
         query: string,
         params: unknown[],
-        paramTypes: unknown[]
+        paramTypes: unknown[],
       ) => {
         if (env.log.level === LogLevel.debug) {
           // biome-ignore lint/suspicious/noConsole: needed for debugging
@@ -39,12 +39,12 @@ export async function closeDbConnection() {
 
 export const joinConditions = (
   xs: (postgres.PendingQuery<postgres.Row[]> | false | undefined | null | "")[],
-  joiner?: postgres.PendingQuery<postgres.Row[]>
+  joiner?: postgres.PendingQuery<postgres.Row[]>,
 ) => {
   const db = getDb();
   const join = joiner ?? db`AND`;
   const filtered = xs.filter((x): x is postgres.PendingQuery<postgres.Row[]> =>
-    Boolean(x)
+    Boolean(x),
   );
 
   if (filtered.length === 0) {
@@ -54,7 +54,7 @@ export const joinConditions = (
   return filtered.reduce(
     (acc, fragment, i) =>
       i === 0 ? db`WHERE ${fragment}` : db`${acc} ${join} ${fragment}`,
-    db``
+    db``,
   );
 };
 
@@ -66,4 +66,3 @@ export const joinConditions = (
  * Note: Returns the postgres library's UnwrapPromiseArray<T> type.
  * When T is not an array, this is equivalent to T at runtime.
  */
-

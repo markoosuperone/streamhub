@@ -1,11 +1,16 @@
 import { ITransactionManager } from "@/transaction/repository/transaction.interface.ts";
 import { IPlaylistItemRepository } from "@/playlists/contracts/repository/playlist-item.repository.interface.ts";
-import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";
 import {
+  IPlaylistItem,
+  IPlaylistItemWithMedia,
+} from "@/playlists/domain/playlist-item.domain.ts";
+import {
+  MediaType,
   PaginatedResponse,
   PlaylistItemCreateDTO,
   PlaylistItemResponseDTO,
   PlaylistItemUpdateDTO,
+  PlaylistItemWithMediaResponseDTO,
 } from "@superplayer/contracts";
 import { PlaylistNotFoundError } from "@/playlists/errors/playlist.errors.ts";
 import {
@@ -23,21 +28,26 @@ import { IPlaylistRepository } from "@/playlists/contracts/repository/playlist.r
 export interface IPlaylistItemUsecase {
   createPlaylistItem(
     playlistItem: PlaylistItemCreateDTO,
-    user_id: string
+    user_id: string,
   ): Promise<PlaylistItemResponseDTO>;
-  getPlaylistItem(id: string, user_id: string): Promise<PlaylistItemResponseDTO>;
+  getPlaylistItem(
+    id: string,
+    user_id: string,
+  ): Promise<PlaylistItemResponseDTO>;
   updatePlaylistItem(
     id: string,
     playlistItem: PlaylistItemUpdateDTO,
-    user_id: string
+    user_id: string,
   ): Promise<PlaylistItemResponseDTO>;
   deletePlaylistItem(id: string, user_id: string): Promise<void>;
   getByPlaylistId(
     playlistId: string,
     user_id: string,
     limit: number,
-    offset: number
-  ): Promise<PaginatedResponse<PlaylistItemResponseDTO>>;
+    offset: number,
+    search?: string,
+    mediaType?: MediaType,
+  ): Promise<PaginatedResponse<PlaylistItemWithMediaResponseDTO>>;
 }
 
 export class PlaylistItemUsecase implements IPlaylistItemUsecase {
@@ -45,22 +55,22 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
     private readonly playlistItemRepository: IPlaylistItemRepository,
     private readonly transactionManager: ITransactionManager<postgres.TransactionSql>,
     private readonly MediaRepository: IMediaStorage,
-    private readonly PlaylistRepository: IPlaylistRepository
+    private readonly PlaylistRepository: IPlaylistRepository,
   ) {}
 
   async createPlaylistItem(
     playlistItem: PlaylistItemCreateDTO,
-    user_id: string
+    user_id: string,
   ): Promise<IPlaylistItem> {
     return await this.transactionManager.withTransaction(async (tx) => {
       const mediaItem = await this.MediaRepository.getById(
         playlistItem.media_id,
-        tx
+        tx,
       );
       const playlist = await this.PlaylistRepository.getById(
         playlistItem.playlist_id,
         user_id,
-        tx
+        tx,
       );
       if (!playlist) {
         throw new PlaylistForCreatePlaylistNotFoundError();
@@ -71,10 +81,10 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
       const playlistItems = await this.playlistItemRepository.getByPlaylistId(
         playlistItem.playlist_id,
         user_id,
-        tx
+        tx,
       );
       const duplicatePlaylistItem = playlistItems.find(
-        (item) => item.media_id === playlistItem.media_id
+        (item) => item.media_id === playlistItem.media_id,
       );
       if (duplicatePlaylistItem) {
         throw new PlaylistItemAlreadyExistsError();
@@ -82,7 +92,7 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
 
       if (playlistItem.position !== undefined) {
         const duplicatePositionItem = playlistItems.find(
-          (item) => item.position === playlistItem.position
+          (item) => item.position === playlistItem.position,
         );
         const lastPosition = playlistItems.length;
         if (duplicatePositionItem) {
@@ -90,7 +100,7 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
             playlistItem.position,
             lastPosition,
             playlist.id,
-            tx
+            tx,
           );
         }
         if (
@@ -108,7 +118,7 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
           media_id: playlistItem.media_id,
           position,
         },
-        tx
+        tx,
       );
     });
   }
@@ -124,14 +134,14 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
   async updatePlaylistItem(
     id: string,
     playlistItem: PlaylistItemUpdateDTO,
-    user_id: string
+    user_id: string,
   ): Promise<IPlaylistItem> {
     return await this.transactionManager.withTransaction(async (tx) => {
       const { position } = playlistItem;
       const playlistItemEntity = await this.playlistItemRepository.getById(
         id,
         user_id,
-        tx
+        tx,
       );
       if (!playlistItemEntity) {
         throw new PlaylistItemNotFoundError();
@@ -142,28 +152,28 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
       if (position < playlistItemEntity.position) {
         const fromPosition = position;
         const toPosition = playlistItemEntity.position - 1;
-        await this.playlistItemRepository.decrementPosition(
+        await this.playlistItemRepository.incrementPosition(
           fromPosition,
           toPosition,
           playlistItemEntity.playlist_id,
-          tx
+          tx,
         );
       }
       if (position > playlistItemEntity.position) {
         const fromPosition = playlistItemEntity.position + 1;
         const toPosition = position;
-        await this.playlistItemRepository.incrementPosition(
+        await this.playlistItemRepository.decrementPosition(
           fromPosition,
           toPosition,
           playlistItemEntity.playlist_id,
-          tx
+          tx,
         );
       }
 
       return await this.playlistItemRepository.updateForOwner(
         { position, id },
         user_id,
-        tx
+        tx,
       );
     });
   }
@@ -171,8 +181,10 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
     playlistId: string,
     user_id: string,
     limit: number,
-    offset: number
-  ): Promise<PaginatedResponse<IPlaylistItem>> {
+    offset: number,
+    search?: string,
+    mediaType?: MediaType,
+  ): Promise<PaginatedResponse<PlaylistItemWithMediaResponseDTO>> {
     const playlist = await this.PlaylistRepository.getById(playlistId, user_id);
     if (!playlist) {
       throw new PlaylistNotFoundError();
@@ -183,9 +195,25 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
         playlistId,
         user_id,
         limit,
-        offset
+        offset,
+        search,
+        mediaType,
       );
-    return { total, items, offset, limit };
+
+    const media = await this.MediaRepository.getByIds(
+      items.map((item) => item.media_id),
+    );
+    const mediaById = new Map(media.map((entry) => [entry.id, entry]));
+
+    // Media deletion cascades to the playlist item, so an item with no matching
+    // media row was deleted between the two queries — drop it rather than
+    // return an item without its media.
+    const itemsWithMedia = items.flatMap<IPlaylistItemWithMedia>((item) => {
+      const itemMedia = mediaById.get(item.media_id);
+      return itemMedia ? [{ ...item, media: itemMedia }] : [];
+    });
+
+    return { total, items: itemsWithMedia, offset, limit };
   }
 
   async deletePlaylistItem(id: string, user_id: string): Promise<void> {
@@ -193,7 +221,7 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
       const deletedItem = await this.playlistItemRepository.deleteForOwner(
         id,
         user_id,
-        tx
+        tx,
       );
       if (!deletedItem) {
         throw new PlaylistItemNotFoundError();
@@ -201,7 +229,7 @@ export class PlaylistItemUsecase implements IPlaylistItemUsecase {
       await this.playlistItemRepository.decrementPositionsAfter(
         deletedItem.playlist_id,
         deletedItem.position,
-        tx
+        tx,
       );
     });
   }

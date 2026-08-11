@@ -1,8 +1,7 @@
 import "@fastify/rate-limit";
 import { FastifyInstance } from "fastify";
 import { MediaController } from "./media.controller.ts";
-import { MediaIdParams } from "./media.schema.ts";
-import { PaginationQueryString } from "@/shared/types/pagination.types.ts";
+import { MediaIdParams, MediaListQueryString } from "./media.schema.ts";
 
 export class MediaRoute {
   constructor(private readonly mediaController: MediaController) {}
@@ -17,15 +16,15 @@ export class MediaRoute {
         },
       },
       schema: {
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
       },
       handler: this.mediaController.upload.bind(this.mediaController),
     });
 
     fastify.get("/media", {
       schema: {
-        querystring: PaginationQueryString,
-        security: [{ bearerAuth: [] }],
+        querystring: MediaListQueryString,
+        security: [{ cookieAuth: [] }],
       },
       handler: this.mediaController.getAllItems.bind(this.mediaController),
     });
@@ -33,15 +32,23 @@ export class MediaRoute {
     fastify.get("/media/:mediaId", {
       schema: {
         params: MediaIdParams,
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
       },
       handler: this.mediaController.execute.bind(this.mediaController),
+    });
+
+    fastify.get("/media/:mediaId/thumbnail", {
+      schema: {
+        params: MediaIdParams,
+        security: [{ cookieAuth: [] }],
+      },
+      handler: this.mediaController.getThumbnail.bind(this.mediaController),
     });
 
     fastify.delete("/media/:mediaId", {
       schema: {
         params: MediaIdParams,
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
       },
       handler: this.mediaController.delete.bind(this.mediaController),
     });

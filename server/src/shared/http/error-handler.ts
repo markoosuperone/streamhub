@@ -30,7 +30,7 @@ export function registerErrorHandler(fastify: FastifyInstance): void {
     if (statusCode >= 500 && !hasBeenLogged(error)) {
       request.log.error(
         { err: error },
-        "Unexpected exception while handling request"
+        "Unexpected exception while handling request",
       );
     }
 

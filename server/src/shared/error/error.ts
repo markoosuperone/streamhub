@@ -5,7 +5,7 @@ export class CustomError extends Error {
   constructor(
     message: string,
     statusCode: number = 500,
-    headers: Record<string, string> = {}
+    headers: Record<string, string> = {},
   ) {
     super(message);
     this.name = new.target.name;

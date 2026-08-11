@@ -20,14 +20,16 @@ export class PlaylistRepository implements IPlaylistRepository {
 
   async create(
     playlist: PlaylistCreateDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylist> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
       const [result] = await db<IPlaylist[]>`
       INSERT INTO playlists (owner_id, title)
       VALUES (${playlist.owner_id}, ${playlist.title})
-      RETURNING *
+      RETURNING *, (
+        SELECT COUNT(*)::int FROM playlist_items WHERE playlist_id = playlists.id
+      ) AS total_items
       `;
       if (!result) {
         throw new CreatePlaylistRecordError();
@@ -36,7 +38,7 @@ export class PlaylistRepository implements IPlaylistRepository {
     } catch (error) {
       logger.error(
         { err: error, ownerId: playlist.owner_id },
-        "Failed to create playlist record"
+        "Failed to create playlist record",
       );
       const wrapped = new CreatePlaylistRecordError();
       markLogged(wrapped);
@@ -47,18 +49,22 @@ export class PlaylistRepository implements IPlaylistRepository {
   async getById(
     id: string,
     user_id: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylist | null> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
       const [playlist] = await db<IPlaylist[]>`
-      SELECT * FROM playlists WHERE id = ${id} AND owner_id = ${user_id}
+      SELECT p.*, (
+        SELECT COUNT(*)::int FROM playlist_items WHERE playlist_id = p.id
+      ) AS total_items
+      FROM playlists p
+      WHERE p.id = ${id} AND p.owner_id = ${user_id}
       `;
       return playlist ?? null;
     } catch (error) {
       logger.error(
         { err: error, playlistId: id, ownerId: user_id },
-        "Failed to get playlist record"
+        "Failed to get playlist record",
       );
       const wrapped = new GetPlaylistRecordError();
       markLogged(wrapped);
@@ -69,14 +75,16 @@ export class PlaylistRepository implements IPlaylistRepository {
   async update(
     playlist: PlaylistUpdateDTO,
     user_id: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylist | null> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
       const [result] = await db<IPlaylist[]>`
       UPDATE playlists SET title = ${playlist.title} WHERE id = ${playlist.id}
       AND owner_id = ${user_id}
-      RETURNING *
+      RETURNING *, (
+        SELECT COUNT(*)::int FROM playlist_items WHERE playlist_id = playlists.id
+      ) AS total_items
       `;
       if (!result) {
         return null;
@@ -85,7 +93,7 @@ export class PlaylistRepository implements IPlaylistRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistId: playlist.id, ownerId: user_id },
-        "Failed to update playlist record"
+        "Failed to update playlist record",
       );
       const wrapped = new UpdatePlaylistRecordError();
       markLogged(wrapped);
@@ -96,7 +104,7 @@ export class PlaylistRepository implements IPlaylistRepository {
   async delete(
     id: string,
     user_id: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<boolean> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -112,7 +120,7 @@ export class PlaylistRepository implements IPlaylistRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistId: id, ownerId: user_id },
-        "Failed to delete playlist record"
+        "Failed to delete playlist record",
       );
       const wrapped = new DeletePlaylistRecordError();
       markLogged(wrapped);
@@ -124,7 +132,7 @@ export class PlaylistRepository implements IPlaylistRepository {
     ownerId: string,
     limit: number,
     offset: number,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<PlaylistGetByOwnerIdRepoResponseDTO> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -133,9 +141,12 @@ export class PlaylistRepository implements IPlaylistRepository {
       WHERE owner_id = ${ownerId}
       `;
       const result = await db<IPlaylist[]>`
-      SELECT * FROM playlists
-      WHERE owner_id = ${ownerId}
-      ORDER BY created_at DESC
+      SELECT p.*, (
+        SELECT COUNT(*)::int FROM playlist_items WHERE playlist_id = p.id
+      ) AS total_items
+      FROM playlists p
+      WHERE p.owner_id = ${ownerId}
+      ORDER BY p.created_at DESC
       LIMIT ${limit}
       OFFSET ${offset}
       `;
@@ -143,7 +154,7 @@ export class PlaylistRepository implements IPlaylistRepository {
     } catch (error) {
       logger.error(
         { err: error, ownerId },
-        "Failed to get playlists for owner"
+        "Failed to get playlists for owner",
       );
       const wrapped = new GetPlaylistRecordError();
       markLogged(wrapped);

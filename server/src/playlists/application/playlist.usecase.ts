@@ -15,13 +15,13 @@ export interface IPlaylistUsecase {
   updatePlaylist(
     id: string,
     playlist: PlaylistUpdateDTO,
-    user_id: string
+    user_id: string,
   ): Promise<PlaylistResponseDTO>;
   deletePlaylist(id: string, user_id: string): Promise<void>;
   getPlaylistByOwnerId(
     owner_id: string,
     limit: number,
-    offset: number
+    offset: number,
   ): Promise<PaginatedResponse<PlaylistResponseDTO>>;
 }
 
@@ -43,12 +43,12 @@ export class PlaylistUsecase implements IPlaylistUsecase {
   async getPlaylistByOwnerId(
     owner_id: string,
     limit: number,
-    offset: number
+    offset: number,
   ): Promise<PaginatedResponse<IPlaylist>> {
     const { total, items } = await this.playlistRepository.getByOwnerId(
       owner_id,
       limit,
-      offset
+      offset,
     );
     return {
       total,
@@ -61,11 +61,11 @@ export class PlaylistUsecase implements IPlaylistUsecase {
   async updatePlaylist(
     id: string,
     playlist: PlaylistUpdateDTO,
-    user_id: string
+    user_id: string,
   ): Promise<IPlaylist> {
     const updatedPlaylist = await this.playlistRepository.update(
       { ...playlist, id },
-      user_id
+      user_id,
     );
     if (!updatedPlaylist) {
       throw new PlaylistNotFoundError();

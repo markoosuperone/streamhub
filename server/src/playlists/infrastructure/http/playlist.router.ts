@@ -2,7 +2,6 @@ import { FastifyInstance } from "fastify";
 import { IPlaylistController } from "./playlist.controller.ts";
 import {
   CreatePlaylistBody,
-
   PlaylistIdParams,
   UpdatePlaylistBody,
 } from "./playlist.schema.ts";
@@ -15,47 +14,47 @@ export class PlaylistRouter {
     fastify.post("/playlists", {
       schema: {
         body: CreatePlaylistBody,
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
       },
       handler: this.playlistController.createPlaylist.bind(
-        this.playlistController
+        this.playlistController,
       ),
     });
     fastify.get("/playlists/:id", {
       schema: {
         params: PlaylistIdParams,
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
       },
       handler: this.playlistController.getPlaylist.bind(
-        this.playlistController
+        this.playlistController,
       ),
     });
     fastify.get("/playlists", {
       schema: {
         querystring: PaginationQueryString,
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
       },
       handler: this.playlistController.getPlaylistByOwnerId.bind(
-        this.playlistController
+        this.playlistController,
       ),
     });
     fastify.patch("/playlists/:id", {
       schema: {
         params: PlaylistIdParams,
         body: UpdatePlaylistBody,
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
       },
       handler: this.playlistController.updatePlaylist.bind(
-        this.playlistController
+        this.playlistController,
       ),
     });
     fastify.delete("/playlists/:id", {
       schema: {
         params: PlaylistIdParams,
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
       },
       handler: this.playlistController.deletePlaylist.bind(
-        this.playlistController
+        this.playlistController,
       ),
     });
   }

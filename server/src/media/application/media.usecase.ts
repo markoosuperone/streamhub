@@ -1,6 +1,10 @@
 import { IMedia } from "@/media/domain/media.domain.ts";
 
-import { MediaResponseDTO, PaginatedResponse } from "@superplayer/contracts";
+import {
+  MediaResponseDTO,
+  MediaType,
+  PaginatedResponse,
+} from "@superplayer/contracts";
 import {
   CreateMediaDTO,
   ExecuteMediaInputDTO,
@@ -20,9 +24,16 @@ export interface IMediaUsecase {
     headers: Record<string, string>;
     statusCode: number;
   }>;
+  getThumbnail(mediaId: string): Promise<{
+    stream: NodeJS.ReadableStream;
+    headers: Record<string, string>;
+    statusCode: number;
+  }>;
   getAllItems(
     limit: number,
-    offset: number
+    offset: number,
+    search?: string,
+    mediaType?: MediaType,
   ): Promise<PaginatedResponse<CreateMediaDTO>>;
   delete(id: string, userId: string): Promise<void>;
 }
@@ -30,7 +41,7 @@ export class MediaUsecase implements IMediaUsecase {
   constructor(
     private readonly mediaRepository: IMediaStorage,
     private readonly fileService: IFileService,
-    private readonly uuidGenerator: IUuidGenerator
+    private readonly uuidGenerator: IUuidGenerator,
   ) {}
   async upload(input: UploadMediaInputDTO): Promise<IMedia> {
     const mediaId = this.uuidGenerator.generate();
@@ -46,6 +57,10 @@ export class MediaUsecase implements IMediaUsecase {
     try {
       const stats = await this.fileService.stat(file_path);
       const duration = await this.fileService.getMediaDuration(file_path);
+      // Videos get a frame grab; for audio ffmpeg extracts embedded cover art
+      // when present. Best-effort either way — the outcome is recorded so
+      // clients can skip requesting a thumbnail that was never produced.
+      const has_thumbnail = await this.fileService.generateThumbnail(file_path);
       const title = normalizeTitle(basename(input.original_name));
 
       const media = await this.mediaRepository.create({
@@ -58,6 +73,7 @@ export class MediaUsecase implements IMediaUsecase {
         size_bytes: stats.size,
         duration_seconds: duration,
         title,
+        has_thumbnail,
       });
 
       return media;
@@ -79,17 +95,44 @@ export class MediaUsecase implements IMediaUsecase {
     return this.fileService.createReadStreamWithRange(
       media.file_path,
       media.mime_type,
-      input.range ?? ""
+      input.range ?? "",
     );
+  }
+
+  async getThumbnail(mediaId: string): Promise<{
+    stream: NodeJS.ReadableStream;
+    headers: Record<string, string>;
+    statusCode: number;
+  }> {
+    const media = await this.mediaRepository.getById(mediaId);
+    if (!media) {
+      throw new MediaNotFoundError();
+    }
+
+    const { stream, size } = await this.fileService.createThumbnailReadStream(
+      media.file_path,
+    );
+    return {
+      stream,
+      statusCode: 200,
+      headers: {
+        "Content-Type": "image/jpeg",
+        "Content-Length": size.toString(),
+      },
+    };
   }
 
   async getAllItems(
     limit: number,
-    offset: number
+    offset: number,
+    search?: string,
+    mediaType?: MediaType,
   ): Promise<PaginatedResponse<CreateMediaDTO>> {
     const { total, items } = await this.mediaRepository.getAllItems(
       limit,
-      offset
+      offset,
+      search,
+      mediaType,
     );
     return {
       items,
@@ -104,6 +147,8 @@ export class MediaUsecase implements IMediaUsecase {
     if (!deletedMedia) {
       throw new MediaNotFoundError();
     }
-    await this.fileService.deleteFile(deletedMedia.file_path, );
+    // Thumbnail first: deleteFile prunes the now-empty directory afterwards.
+    await this.fileService.deleteThumbnail(deletedMedia.file_path);
+    await this.fileService.deleteFile(deletedMedia.file_path);
   }
 }

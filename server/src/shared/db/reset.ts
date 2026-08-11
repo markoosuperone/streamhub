@@ -57,7 +57,7 @@ async function dropAllObjects(sql: ReturnType<typeof postgres>) {
       const escapedName = `"${func.proname.replace(/"/g, '""')}"`;
       if (signature.length > 0 && signature[0]?.signature) {
         await sql.unsafe(
-          `DROP FUNCTION IF EXISTS ${escapedName}(${signature[0].signature}) CASCADE;`
+          `DROP FUNCTION IF EXISTS ${escapedName}(${signature[0].signature}) CASCADE;`,
         );
       } else {
         await sql.unsafe(`DROP FUNCTION IF EXISTS ${escapedName}() CASCADE;`);

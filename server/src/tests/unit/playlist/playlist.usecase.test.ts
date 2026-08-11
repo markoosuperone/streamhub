@@ -1,4 +1,11 @@
-import { describe, it, expect, vi, beforeEach, type MockedObject } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  type MockedObject,
+} from "vitest";
 import { PlaylistUsecase } from "@/playlists/application/playlist.usecase.ts";
 import { IPlaylistRepository } from "@/playlists/contracts/repository/playlist.repository.interface.ts";
 import { PlaylistNotFoundError } from "@/playlists/errors/playlist.errors.ts";
@@ -30,7 +37,10 @@ describe("PlaylistUsecase", () => {
     it("should call repository.create once", async () => {
       playlistRepository.create.mockResolvedValue(makePlaylist());
 
-      await usecase.createPlaylist({ owner_id: OWNER_ID, title: PLAYLIST_TITLE });
+      await usecase.createPlaylist({
+        owner_id: OWNER_ID,
+        title: PLAYLIST_TITLE,
+      });
 
       expect(playlistRepository.create).toHaveBeenCalledOnce();
     });
@@ -38,17 +48,23 @@ describe("PlaylistUsecase", () => {
     it("should pass owner_id through unchanged", async () => {
       playlistRepository.create.mockResolvedValue(makePlaylist());
 
-      await usecase.createPlaylist({ owner_id: OWNER_ID, title: PLAYLIST_TITLE });
+      await usecase.createPlaylist({
+        owner_id: OWNER_ID,
+        title: PLAYLIST_TITLE,
+      });
 
       expect(playlistRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ owner_id: OWNER_ID })
+        expect.objectContaining({ owner_id: OWNER_ID }),
       );
     });
 
     it("should normalize the title before passing to repository", async () => {
       playlistRepository.create.mockResolvedValue(makePlaylist());
 
-      await usecase.createPlaylist({ owner_id: OWNER_ID, title: "  my--playlist!!  " });
+      await usecase.createPlaylist({
+        owner_id: OWNER_ID,
+        title: "  my--playlist!!  ",
+      });
 
       const [createArg] = playlistRepository.create.mock.calls[0]!;
       // normalizeTitle should clean up the raw title; whatever it produces
@@ -74,7 +90,7 @@ describe("PlaylistUsecase", () => {
       playlistRepository.create.mockRejectedValue(new Error("DB error"));
 
       await expect(
-        usecase.createPlaylist({ owner_id: OWNER_ID, title: PLAYLIST_TITLE })
+        usecase.createPlaylist({ owner_id: OWNER_ID, title: PLAYLIST_TITLE }),
       ).rejects.toThrow("DB error");
     });
   });
@@ -88,7 +104,10 @@ describe("PlaylistUsecase", () => {
 
       const result = await usecase.getPlaylist(PLAYLIST_ID, OWNER_ID);
 
-      expect(playlistRepository.getById).toHaveBeenCalledWith(PLAYLIST_ID, OWNER_ID);
+      expect(playlistRepository.getById).toHaveBeenCalledWith(
+        PLAYLIST_ID,
+        OWNER_ID,
+      );
       expect(result).toBe(playlist);
     });
 
@@ -96,14 +115,16 @@ describe("PlaylistUsecase", () => {
       playlistRepository.getById.mockResolvedValue(null);
 
       await expect(usecase.getPlaylist("missing", OWNER_ID)).rejects.toThrow(
-        PlaylistNotFoundError
+        PlaylistNotFoundError,
       );
     });
 
     it("should throw when repository.getById rejects", async () => {
       playlistRepository.getById.mockRejectedValue(new Error("DB error"));
 
-      await expect(usecase.getPlaylist(PLAYLIST_ID, OWNER_ID)).rejects.toThrow("DB error");
+      await expect(usecase.getPlaylist(PLAYLIST_ID, OWNER_ID)).rejects.toThrow(
+        "DB error",
+      );
     });
   });
 
@@ -116,12 +137,19 @@ describe("PlaylistUsecase", () => {
 
       const result = await usecase.getPlaylistByOwnerId(OWNER_ID, 10, 5);
 
-      expect(playlistRepository.getByOwnerId).toHaveBeenCalledWith(OWNER_ID, 10, 5);
+      expect(playlistRepository.getByOwnerId).toHaveBeenCalledWith(
+        OWNER_ID,
+        10,
+        5,
+      );
       expect(result).toEqual({ total: 20, items, limit: 10, offset: 5 });
     });
 
     it("should return empty items when owner has no playlists", async () => {
-      playlistRepository.getByOwnerId.mockResolvedValue({ total: 0, items: [] });
+      playlistRepository.getByOwnerId.mockResolvedValue({
+        total: 0,
+        items: [],
+      });
 
       const result = await usecase.getPlaylistByOwnerId(OWNER_ID, 10, 0);
 
@@ -131,7 +159,9 @@ describe("PlaylistUsecase", () => {
     it("should throw when repository.getByOwnerId rejects", async () => {
       playlistRepository.getByOwnerId.mockRejectedValue(new Error("DB error"));
 
-      await expect(usecase.getPlaylistByOwnerId(OWNER_ID, 10, 0)).rejects.toThrow("DB error");
+      await expect(
+        usecase.getPlaylistByOwnerId(OWNER_ID, 10, 0),
+      ).rejects.toThrow("DB error");
     });
   });
 
@@ -145,7 +175,7 @@ describe("PlaylistUsecase", () => {
       const result = await usecase.updatePlaylist(
         PLAYLIST_ID,
         { title: UPDATED_TITLE, id: PLAYLIST_ID },
-        OWNER_ID
+        OWNER_ID,
       );
 
       expect(result).toBe(updated);
@@ -157,12 +187,12 @@ describe("PlaylistUsecase", () => {
       await usecase.updatePlaylist(
         PLAYLIST_ID,
         { title: UPDATED_TITLE, id: PLAYLIST_ID },
-        OWNER_ID
+        OWNER_ID,
       );
 
       expect(playlistRepository.update).toHaveBeenCalledWith(
         expect.objectContaining({ id: PLAYLIST_ID, title: UPDATED_TITLE }),
-        OWNER_ID
+        OWNER_ID,
       );
     });
 
@@ -170,7 +200,11 @@ describe("PlaylistUsecase", () => {
       playlistRepository.update.mockResolvedValue(null);
 
       await expect(
-        usecase.updatePlaylist("missing", { title: UPDATED_TITLE, id: PLAYLIST_ID }, OWNER_ID)
+        usecase.updatePlaylist(
+          "missing",
+          { title: UPDATED_TITLE, id: PLAYLIST_ID },
+          OWNER_ID,
+        ),
       ).rejects.toThrow(PlaylistNotFoundError);
     });
 
@@ -178,7 +212,11 @@ describe("PlaylistUsecase", () => {
       playlistRepository.update.mockRejectedValue(new Error("DB error"));
 
       await expect(
-        usecase.updatePlaylist(PLAYLIST_ID, { title: UPDATED_TITLE, id: PLAYLIST_ID }, OWNER_ID)
+        usecase.updatePlaylist(
+          PLAYLIST_ID,
+          { title: UPDATED_TITLE, id: PLAYLIST_ID },
+          OWNER_ID,
+        ),
       ).rejects.toThrow("DB error");
     });
   });
@@ -190,25 +228,28 @@ describe("PlaylistUsecase", () => {
       playlistRepository.delete.mockResolvedValue(true);
 
       await expect(
-        usecase.deletePlaylist(PLAYLIST_ID, OWNER_ID)
+        usecase.deletePlaylist(PLAYLIST_ID, OWNER_ID),
       ).resolves.toBeUndefined();
 
-      expect(playlistRepository.delete).toHaveBeenCalledWith(PLAYLIST_ID, OWNER_ID);
+      expect(playlistRepository.delete).toHaveBeenCalledWith(
+        PLAYLIST_ID,
+        OWNER_ID,
+      );
     });
 
     it("should throw PlaylistNotFoundError when repository returns false", async () => {
       playlistRepository.delete.mockResolvedValue(false);
 
-      await expect(
-        usecase.deletePlaylist("missing", OWNER_ID)
-      ).rejects.toThrow(PlaylistNotFoundError);
+      await expect(usecase.deletePlaylist("missing", OWNER_ID)).rejects.toThrow(
+        PlaylistNotFoundError,
+      );
     });
 
     it("should throw when repository.delete rejects", async () => {
       playlistRepository.delete.mockRejectedValue(new Error("DB error"));
 
       await expect(
-        usecase.deletePlaylist(PLAYLIST_ID, OWNER_ID)
+        usecase.deletePlaylist(PLAYLIST_ID, OWNER_ID),
       ).rejects.toThrow("DB error");
     });
   });

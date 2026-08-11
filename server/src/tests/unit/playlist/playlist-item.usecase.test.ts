@@ -1,9 +1,19 @@
-import { describe, it, expect, vi, beforeEach, type MockedObject } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  type MockedObject,
+} from "vitest";
 import { PlaylistItemUsecase } from "@/playlists/application/playlist-item.usecase.ts";
 import { IPlaylistItemRepository } from "@/playlists/contracts/repository/playlist-item.repository.interface.ts";
 import { IPlaylistRepository } from "@/playlists/contracts/repository/playlist.repository.interface.ts";
 import { IMediaStorage } from "@/media/contracts/repository/mediaStorage.interface.ts";
-import { ITransactionManager, IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
+import {
+  ITransactionManager,
+  IDbTransaction,
+} from "@/transaction/repository/transaction.interface.ts";
 import {
   MediaItemForCreatePlaylistNotFoundError,
   PlaylistForCreatePlaylistNotFoundError,
@@ -51,7 +61,7 @@ describe("PlaylistItemUsecase", () => {
       playlistItemRepository,
       transactionManager,
       mediaRepository,
-      playlistRepository
+      playlistRepository,
     );
   });
 
@@ -75,7 +85,7 @@ describe("PlaylistItemUsecase", () => {
 
       expect(playlistItemRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({ position: 3 }), // 2 existing items → position must be 3
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -91,7 +101,7 @@ describe("PlaylistItemUsecase", () => {
 
       expect(playlistItemRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({ position: 1 }),
-        expect.anything()
+        expect.anything(),
       );
     });
 
@@ -112,7 +122,7 @@ describe("PlaylistItemUsecase", () => {
           media_id: INPUT_MEDIA_ID,
           position: 2,
         },
-        {}
+        {},
       );
     });
 
@@ -121,7 +131,7 @@ describe("PlaylistItemUsecase", () => {
       playlistRepository.getById.mockResolvedValue(null);
 
       await expect(usecase.createPlaylistItem(input, USER_ID)).rejects.toThrow(
-        PlaylistForCreatePlaylistNotFoundError
+        PlaylistForCreatePlaylistNotFoundError,
       );
       expect(playlistItemRepository.create).not.toHaveBeenCalled();
     });
@@ -131,7 +141,7 @@ describe("PlaylistItemUsecase", () => {
       playlistRepository.getById.mockResolvedValue(makePlaylist());
 
       await expect(usecase.createPlaylistItem(input, USER_ID)).rejects.toThrow(
-        MediaItemForCreatePlaylistNotFoundError
+        MediaItemForCreatePlaylistNotFoundError,
       );
       expect(playlistItemRepository.create).not.toHaveBeenCalled();
     });
@@ -144,15 +154,27 @@ describe("PlaylistItemUsecase", () => {
       ]);
 
       await expect(usecase.createPlaylistItem(input, USER_ID)).rejects.toThrow(
-        PlaylistItemAlreadyExistsError
+        PlaylistItemAlreadyExistsError,
       );
     });
 
     it("increments positions when requested position is already taken", async () => {
       const existingItems = [
-        makePlaylistItem({ id: "item-1", media_id: "media-other-1", position: 1 }),
-        makePlaylistItem({ id: "item-2", media_id: "media-other-2", position: 2 }),
-        makePlaylistItem({ id: "item-3", media_id: "media-other-3", position: 3 }),
+        makePlaylistItem({
+          id: "item-1",
+          media_id: "media-other-1",
+          position: 1,
+        }),
+        makePlaylistItem({
+          id: "item-2",
+          media_id: "media-other-2",
+          position: 2,
+        }),
+        makePlaylistItem({
+          id: "item-3",
+          media_id: "media-other-3",
+          position: 3,
+        }),
       ];
 
       mediaRepository.getById.mockResolvedValue(makeMedia());
@@ -165,19 +187,30 @@ describe("PlaylistItemUsecase", () => {
 
       // position 2 is taken → shift items from position 2 to lastPosition (3) up by one
       expect(playlistItemRepository.incrementPosition).toHaveBeenCalledWith(
-        2, 3, PLAYLIST_ID, expect.any(Object)
+        2,
+        3,
+        PLAYLIST_ID,
+        expect.any(Object),
       );
       // then create at the requested position
       expect(playlistItemRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({ position: 2 }),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
     it("skips incrementPosition when requested position is free", async () => {
       const existingItems = [
-        makePlaylistItem({ id: "item-1", media_id: "media-other-1", position: 1 }),
-        makePlaylistItem({ id: "item-2", media_id: "media-other-2", position: 2 }),
+        makePlaylistItem({
+          id: "item-1",
+          media_id: "media-other-1",
+          position: 1,
+        }),
+        makePlaylistItem({
+          id: "item-2",
+          media_id: "media-other-2",
+          position: 2,
+        }),
       ];
 
       mediaRepository.getById.mockResolvedValue(makeMedia());
@@ -190,7 +223,7 @@ describe("PlaylistItemUsecase", () => {
       expect(playlistItemRepository.incrementPosition).not.toHaveBeenCalled();
       expect(playlistItemRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({ position: 3 }),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -203,7 +236,7 @@ describe("PlaylistItemUsecase", () => {
 
       // list has 1 item, so valid range is 1-2; position 5 is out of bounds
       await expect(
-        usecase.createPlaylistItem({ ...input, position: 5 }, USER_ID)
+        usecase.createPlaylistItem({ ...input, position: 5 }, USER_ID),
       ).rejects.toThrow(PlaylistItemPositionError);
     });
 
@@ -213,7 +246,7 @@ describe("PlaylistItemUsecase", () => {
       playlistItemRepository.getByPlaylistId.mockResolvedValue([]);
 
       await expect(
-        usecase.createPlaylistItem({ ...input, position: 0 }, USER_ID)
+        usecase.createPlaylistItem({ ...input, position: 0 }, USER_ID),
       ).rejects.toThrow(PlaylistItemPositionError);
     });
   });
@@ -227,23 +260,28 @@ describe("PlaylistItemUsecase", () => {
 
       const result = await usecase.getPlaylistItem(ITEM_ID, USER_ID);
 
-      expect(playlistItemRepository.getById).toHaveBeenCalledWith(ITEM_ID, USER_ID);
+      expect(playlistItemRepository.getById).toHaveBeenCalledWith(
+        ITEM_ID,
+        USER_ID,
+      );
       expect(result).toBe(item);
     });
 
     it("throws PlaylistItemNotFoundError when item does not exist", async () => {
       playlistItemRepository.getById.mockResolvedValue(null);
 
-      await expect(
-        usecase.getPlaylistItem("missing", USER_ID)
-      ).rejects.toThrow(PlaylistItemNotFoundError);
+      await expect(usecase.getPlaylistItem("missing", USER_ID)).rejects.toThrow(
+        PlaylistItemNotFoundError,
+      );
     });
   });
 
   // ── updatePlaylistItem ────────────────────────────────────────────────────
 
   describe("updatePlaylistItem", () => {
-    it("shifts items down when moving to a lower position", async () => {
+    // Moving an item up the list pushes the items it displaces further down,
+    // which *raises* their position numbers — hence incrementPosition.
+    it("raises the positions of items displaced by a move to a lower position", async () => {
       const existing = makePlaylistItem({ position: 3 });
       const updated = makePlaylistItem({ position: 1 });
 
@@ -253,18 +291,21 @@ describe("PlaylistItemUsecase", () => {
       const result = await usecase.updatePlaylistItem(
         ITEM_ID,
         { position: 1, id: ITEM_ID },
-        USER_ID
+        USER_ID,
       );
 
-      // moving from 3 → 1: items in range [1, 2] should be shifted down
-      expect(playlistItemRepository.decrementPosition).toHaveBeenCalledWith(
-        1, 2, PLAYLIST_ID, expect.anything()
+      // moving from 3 → 1: items at 1 and 2 make room by becoming 2 and 3
+      expect(playlistItemRepository.incrementPosition).toHaveBeenCalledWith(
+        1,
+        2,
+        PLAYLIST_ID,
+        expect.anything(),
       );
-      expect(playlistItemRepository.incrementPosition).not.toHaveBeenCalled();
+      expect(playlistItemRepository.decrementPosition).not.toHaveBeenCalled();
       expect(result).toBe(updated);
     });
 
-    it("shifts items up when moving to a higher position", async () => {
+    it("lowers the positions of items displaced by a move to a higher position", async () => {
       const existing = makePlaylistItem({ position: 1 });
       const updated = makePlaylistItem({ position: 3 });
 
@@ -274,14 +315,17 @@ describe("PlaylistItemUsecase", () => {
       const result = await usecase.updatePlaylistItem(
         ITEM_ID,
         { position: 3, id: ITEM_ID },
-        USER_ID
+        USER_ID,
       );
 
-      // moving from 1 → 3: items in range [2, 3] should be shifted up
-      expect(playlistItemRepository.incrementPosition).toHaveBeenCalledWith(
-        2, 3, PLAYLIST_ID, expect.anything()
+      // moving from 1 → 3: items at 2 and 3 close the gap by becoming 1 and 2
+      expect(playlistItemRepository.decrementPosition).toHaveBeenCalledWith(
+        2,
+        3,
+        PLAYLIST_ID,
+        expect.anything(),
       );
-      expect(playlistItemRepository.decrementPosition).not.toHaveBeenCalled();
+      expect(playlistItemRepository.incrementPosition).not.toHaveBeenCalled();
       expect(result).toBe(updated);
     });
 
@@ -295,7 +339,7 @@ describe("PlaylistItemUsecase", () => {
       await usecase.updatePlaylistItem(
         ITEM_ID,
         { position: 2, id: ITEM_ID },
-        USER_ID
+        USER_ID,
       );
 
       expect(playlistItemRepository.decrementPosition).not.toHaveBeenCalled();
@@ -306,33 +350,66 @@ describe("PlaylistItemUsecase", () => {
   // ── getByPlaylistId ───────────────────────────────────────────────────────
 
   describe("getByPlaylistId", () => {
-    it("returns paginated items for a valid playlist", async () => {
+    it("returns paginated items with their media for a valid playlist", async () => {
+      const media = makeMedia({ id: MEDIA_ID });
       const items = [
-        makePlaylistItem(),
-        makePlaylistItem({ id: "item-2", position: 2 }),
+        makePlaylistItem({ media_id: MEDIA_ID }),
+        makePlaylistItem({ id: "item-2", position: 2, media_id: MEDIA_ID }),
       ];
       playlistRepository.getById.mockResolvedValue(makePlaylist());
       playlistItemRepository.getByPlaylistIdPaginated.mockResolvedValue({
         total: 10,
         items,
       });
+      mediaRepository.getByIds.mockResolvedValue([media]);
 
       const result = await usecase.getByPlaylistId(PLAYLIST_ID, USER_ID, 5, 0);
 
-      expect(playlistItemRepository.getByPlaylistIdPaginated).toHaveBeenCalledWith(
-        PLAYLIST_ID, USER_ID, 5, 0
-      );
-      expect(result).toEqual({ total: 10, items, limit: 5, offset: 0 });
+      expect(
+        playlistItemRepository.getByPlaylistIdPaginated,
+      ).toHaveBeenCalledWith(PLAYLIST_ID, USER_ID, 5, 0, undefined, undefined);
+      expect(mediaRepository.getByIds).toHaveBeenCalledWith([
+        MEDIA_ID,
+        MEDIA_ID,
+      ]);
+      expect(result).toEqual({
+        total: 10,
+        items: items.map((item) => ({ ...item, media })),
+        limit: 5,
+        offset: 0,
+      });
+    });
+
+    it("drops items whose media no longer exists", async () => {
+      const media = makeMedia({ id: MEDIA_ID });
+      const kept = makePlaylistItem({ media_id: MEDIA_ID });
+      const orphaned = makePlaylistItem({
+        id: "item-2",
+        position: 2,
+        media_id: "deleted-media",
+      });
+      playlistRepository.getById.mockResolvedValue(makePlaylist());
+      playlistItemRepository.getByPlaylistIdPaginated.mockResolvedValue({
+        total: 2,
+        items: [kept, orphaned],
+      });
+      mediaRepository.getByIds.mockResolvedValue([media]);
+
+      const result = await usecase.getByPlaylistId(PLAYLIST_ID, USER_ID, 5, 0);
+
+      expect(result.items).toEqual([{ ...kept, media }]);
     });
 
     it("throws PlaylistNotFoundError when playlist does not exist", async () => {
       playlistRepository.getById.mockResolvedValue(null);
 
       await expect(
-        usecase.getByPlaylistId("missing", USER_ID, 5, 0)
+        usecase.getByPlaylistId("missing", USER_ID, 5, 0),
       ).rejects.toThrow(PlaylistNotFoundError);
 
-      expect(playlistItemRepository.getByPlaylistIdPaginated).not.toHaveBeenCalled();
+      expect(
+        playlistItemRepository.getByPlaylistIdPaginated,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -346,20 +423,24 @@ describe("PlaylistItemUsecase", () => {
       await usecase.deletePlaylistItem(ITEM_ID, USER_ID);
 
       expect(playlistItemRepository.deleteForOwner).toHaveBeenCalledWith(
-        ITEM_ID, USER_ID, expect.anything()
+        ITEM_ID,
+        USER_ID,
+        expect.anything(),
       );
-      expect(playlistItemRepository.decrementPositionsAfter).toHaveBeenCalledWith(
-        PLAYLIST_ID, 2, expect.anything()
-      );
+      expect(
+        playlistItemRepository.decrementPositionsAfter,
+      ).toHaveBeenCalledWith(PLAYLIST_ID, 2, expect.anything());
     });
 
     it("throws PlaylistItemNotFoundError when item does not exist", async () => {
       playlistItemRepository.deleteForOwner.mockResolvedValue(null);
 
       await expect(
-        usecase.deletePlaylistItem("missing", USER_ID)
+        usecase.deletePlaylistItem("missing", USER_ID),
       ).rejects.toThrow(PlaylistItemNotFoundError);
-      expect(playlistItemRepository.decrementPositionsAfter).not.toHaveBeenCalled();
+      expect(
+        playlistItemRepository.decrementPositionsAfter,
+      ).not.toHaveBeenCalled();
     });
   });
 });
