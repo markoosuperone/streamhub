@@ -1,10 +1,10 @@
+import { LoginBodyDTO, RegisterBodyDTO } from "@superplayer/contracts";
 import {
-  AuthResponseDTO,
-  LoginBodyDTO,
-  RefreshTokenResponseDTO,
-  RegisterBodyDTO,
-} from "@superplayer/contracts";
-import { toUserDTO, UpdateSessionDTO } from "@/auth/dto/auth.dto.ts";
+  AuthResultDTO,
+  TokenPairDTO,
+  toUserDTO,
+  UpdateSessionDTO,
+} from "@/auth/dto/auth.dto.ts";
 import { IUserRepository } from "@/users/repository/user.repository.ts";
 import { ISessionRepository } from "@/auth/contracts/repository/session.interface.ts";
 import { IHasher } from "@/auth/contracts/services/hasher.interface.ts";
@@ -20,10 +20,10 @@ import {
 import { logger } from "@/shared/logger/logger.ts";
 
 export interface IAuthUsecase {
-  registerAuth: (auth: RegisterBodyDTO) => Promise<AuthResponseDTO>;
-  loginAuth: (auth: LoginBodyDTO) => Promise<AuthResponseDTO>;
+  registerAuth: (auth: RegisterBodyDTO) => Promise<AuthResultDTO>;
+  loginAuth: (auth: LoginBodyDTO) => Promise<AuthResultDTO>;
   logoutAuth: (sessionId: string) => Promise<void>;
-  refreshToken: (refreshToken: string) => Promise<RefreshTokenResponseDTO>;
+  refreshToken: (refreshToken: string) => Promise<TokenPairDTO>;
 }
 
 export class AuthUsecase implements IAuthUsecase {
@@ -33,13 +33,13 @@ export class AuthUsecase implements IAuthUsecase {
     private readonly tokenProvider: ITokenProvider,
     private readonly sessionRepository: ISessionRepository,
     private readonly transactionManager: ITransactionManager<postgres.TransactionSql>,
-    private readonly uuidGenerator: IUuidGenerator
+    private readonly uuidGenerator: IUuidGenerator,
   ) {}
 
   async registerAuth({
     email,
     password,
-  }: RegisterBodyDTO): Promise<AuthResponseDTO> {
+  }: RegisterBodyDTO): Promise<AuthResultDTO> {
     // Check if user already exists
     const existingUser = await this.userRepository.getUserByEmail({ email });
     if (existingUser) {
@@ -56,7 +56,7 @@ export class AuthUsecase implements IAuthUsecase {
           email,
           password_hash,
         },
-        tx
+        tx,
       );
       // Generate tokens
       const session_id = this.uuidGenerator.generate();
@@ -80,7 +80,7 @@ export class AuthUsecase implements IAuthUsecase {
     });
   }
 
-  async loginAuth({ email, password }: LoginBodyDTO): Promise<AuthResponseDTO> {
+  async loginAuth({ email, password }: LoginBodyDTO): Promise<AuthResultDTO> {
     // Find user by email
     const user = await this.userRepository.getUserByEmail({ email });
     if (!user) {
@@ -90,7 +90,7 @@ export class AuthUsecase implements IAuthUsecase {
     // Verify password
     const isPasswordValid = await this.hasher.verify(
       password,
-      user.password_hash
+      user.password_hash,
     );
     if (!isPasswordValid) {
       throw new InvalidEmailOrPasswordError();
@@ -121,7 +121,7 @@ export class AuthUsecase implements IAuthUsecase {
     await this.sessionRepository.deleteSession(sessionId);
   }
 
-  async refreshToken(refreshToken: string): Promise<RefreshTokenResponseDTO> {
+  async refreshToken(refreshToken: string): Promise<TokenPairDTO> {
     const verifyTokenPayload =
       this.tokenProvider.verifyRefreshToken(refreshToken);
     const isInvalidTokenPayload =
@@ -142,7 +142,7 @@ export class AuthUsecase implements IAuthUsecase {
 
     const isTokenValid = await this.hasher.verify(
       refreshToken,
-      session.token_hash
+      session.token_hash,
     );
     if (!isTokenValid) {
       // The session exists but the presented token doesn't match its stored
@@ -150,7 +150,7 @@ export class AuthUsecase implements IAuthUsecase {
       // a stale or tampered refresh token.
       logger.warn(
         { sessionId: session_id, userId: session.user_id },
-        "Refresh token did not match stored hash for an active session"
+        "Refresh token did not match stored hash for an active session",
       );
       throw new InvalidRefreshTokenError();
     }

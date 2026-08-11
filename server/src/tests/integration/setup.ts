@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
+import type { MediaType } from "@superplayer/contracts";
 import { buildApp } from "@/app.ts";
 import { buildContainer } from "@/container.ts";
 import { closeDbConnection, getDb } from "@/shared/db/postgres.ts";
@@ -27,7 +28,11 @@ export type AuthResult = {
   user_id: string;
   access_token: string;
   refresh_token: string;
-  authHeader: string;
+  // Spread into `cookies`/`headers` of an inject call to authenticate as this
+  // user: the cookies carry the session and the CSRF secret, the header carries
+  // the matching CSRF token that mutating routes require.
+  cookies: Record<string, string>;
+  headers: Record<string, string>;
 };
 
 // fastify-rate-limit buckets by request.ip; giving each rate-limited call its
@@ -88,16 +93,26 @@ export async function registerUser(
   if (res.statusCode !== 201) {
     throw new Error(`registerUser failed [${res.statusCode}]: ${res.body}`);
   }
-  const b = JSON.parse(res.body) as {
-    user: { user_id: string };
-    access_token: string;
-    refresh_token: string;
-  };
+
+  // Read the tokens off the Set-Cookie headers rather than the response body:
+  // cookies are where they actually live, and the body no longer carries them.
+  const cookieValue = (name: string): string =>
+    res.cookies.find((cookie) => cookie.name === name)?.value ?? "";
+  const access_token = cookieValue("access_token");
+  const refresh_token = cookieValue("refresh_token");
+
+  const csrfRes = await app.inject({ method: "GET", url: "/csrf-token" });
+  const csrf_secret =
+    csrfRes.cookies.find((cookie) => cookie.name === "_csrf")?.value ?? "";
+  const { csrf_token } = JSON.parse(csrfRes.body) as { csrf_token: string };
+
+  const b = JSON.parse(res.body) as { user: { user_id: string } };
   return {
     user_id: b.user.user_id,
-    access_token: b.access_token,
-    refresh_token: b.refresh_token,
-    authHeader: `Bearer ${b.access_token}`,
+    access_token,
+    refresh_token,
+    cookies: { access_token, refresh_token, _csrf: csrf_secret },
+    headers: { "x-csrf-token": csrf_token },
   };
 }
 
@@ -109,7 +124,8 @@ export async function createPlaylist(
   const res = await app.inject({
     method: "POST",
     url: "/playlists",
-    headers: { authorization: user.authHeader },
+    cookies: user.cookies,
+    headers: user.headers,
     payload: { title },
   });
   if (res.statusCode !== 201) {
@@ -126,7 +142,12 @@ export async function createPlaylist(
 // Use for tests that don't exercise FileService (playlist-item lookups, media list, etc.).
 export async function seedMediaRecord(
   userId: string,
-  overrides: { id?: string; file_path?: string; title?: string } = {},
+  overrides: {
+    id?: string;
+    file_path?: string;
+    title?: string;
+    media_type?: MediaType;
+  } = {},
 ): Promise<{
   id: string;
   owner_id: string;
@@ -138,6 +159,8 @@ export async function seedMediaRecord(
   const id = overrides.id ?? randomUUID();
   const file_path = overrides.file_path ?? `${userId}/${id}/test.mp4`;
   const title = overrides.title ?? "Test Video";
+  const media_type = overrides.media_type ?? "video";
+  const mime_type = media_type === "audio" ? "audio/mpeg" : "video/mp4";
   const [media] = await db<
     {
       id: string;
@@ -148,7 +171,7 @@ export async function seedMediaRecord(
     }[]
   >`
     INSERT INTO media_items (id, owner_id, media_type, file_path, mime_type, size_bytes, duration_seconds, title)
-    VALUES (${id}, ${userId}, 'video', ${file_path}, 'video/mp4', 1024, 60.0, ${title})
+    VALUES (${id}, ${userId}, ${media_type}, ${file_path}, ${mime_type}, 1024, 60.0, ${title})
     RETURNING id, owner_id, file_path, title, mime_type
   `;
   if (!media) throw new Error("seedMediaRecord: insert returned nothing");

@@ -9,7 +9,7 @@ export class Hasher implements IHasher {
   private scryptAsync(
     value: string,
     salt: string,
-    keyLength: number
+    keyLength: number,
   ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       crypto.scrypt(value, salt, keyLength, (err, derivedKey) => {

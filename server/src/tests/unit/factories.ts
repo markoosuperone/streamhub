@@ -1,7 +1,7 @@
 import { Readable } from "node:stream";
 import { IUser } from "@/users/domain/user.entity.ts";
 import { ISession } from "@/auth/domain/session.domain.ts";
-import { TokenPairDTO } from "@superplayer/contracts";
+import { TokenPairDTO } from "@/auth/dto/auth.dto.ts";
 import { IMedia } from "@/media/domain/media.domain.ts";
 import { IPlaylist } from "@/playlists/domain/playlist.domain.ts";
 import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";
@@ -25,7 +25,9 @@ export const makeSession = (overrides: Partial<ISession> = {}): ISession => ({
   ...overrides,
 });
 
-export const makeTokens = (overrides: Partial<TokenPairDTO> = {}): TokenPairDTO => ({
+export const makeTokens = (
+  overrides: Partial<TokenPairDTO> = {},
+): TokenPairDTO => ({
   access_token: "access-token",
   refresh_token: "refresh-token",
   access_token_expires_at: new Date(),
@@ -43,21 +45,27 @@ export const makeMedia = (overrides: Partial<IMedia> = {}): IMedia => ({
   size_bytes: 1024,
   duration_seconds: 60,
   title: "Sample Video",
+  has_thumbnail: true,
   created_at: new Date(),
   updated_at: new Date(),
   ...overrides,
 });
 
-export const makePlaylist = (overrides: Partial<IPlaylist> = {}): IPlaylist => ({
+export const makePlaylist = (
+  overrides: Partial<IPlaylist> = {},
+): IPlaylist => ({
   id: "playlist-1",
   owner_id: "user-1",
   title: "My Playlist",
   created_at: new Date("2024-01-01"),
   updated_at: new Date("2024-01-01"),
+  total_items: 0,
   ...overrides,
 });
 
-export const makePlaylistItem = (overrides: Partial<IPlaylistItem> = {}): IPlaylistItem => ({
+export const makePlaylistItem = (
+  overrides: Partial<IPlaylistItem> = {},
+): IPlaylistItem => ({
   id: "item-1",
   playlist_id: "playlist-1",
   media_id: "media-1",

@@ -118,4 +118,4 @@ export class UnauthorizedError extends CustomError {
   constructor(statusCode: number = 401) {
     super(AuthErrors.UNAUTHORIZED, statusCode);
   }
-} 
+}

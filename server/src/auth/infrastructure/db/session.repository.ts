@@ -28,7 +28,7 @@ export class SessionRepository implements ISessionRepository {
     } catch (error) {
       logger.error(
         { err: error, sessionId: session.id, userId: session.user_id },
-        "Failed to create session record"
+        "Failed to create session record",
       );
       const wrapped = new CreateSessionError();
       markLogged(wrapped);
@@ -38,7 +38,7 @@ export class SessionRepository implements ISessionRepository {
 
   async checkRefreshToken(
     token: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<ISession | null> {
     try {
       const db = (tx ?? this.sql) as DbExecutor;
@@ -56,7 +56,7 @@ export class SessionRepository implements ISessionRepository {
 
   async getSessionById(
     id: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<ISession | null> {
     try {
       const db = (tx ?? this.sql) as DbExecutor;
@@ -67,7 +67,7 @@ export class SessionRepository implements ISessionRepository {
     } catch (error) {
       logger.error(
         { err: error, sessionId: id },
-        "Failed to get session record"
+        "Failed to get session record",
       );
       const wrapped = new GetSessionRecordError();
       markLogged(wrapped);
@@ -77,7 +77,7 @@ export class SessionRepository implements ISessionRepository {
 
   async updateSession(
     updateSession: UpdateSessionDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<void> {
     try {
       const db = (tx ?? this.sql) as DbExecutor;
@@ -87,7 +87,7 @@ export class SessionRepository implements ISessionRepository {
     } catch (error) {
       logger.error(
         { err: error, sessionId: updateSession.id },
-        "Failed to update session record"
+        "Failed to update session record",
       );
       const wrapped = new UpdateSessionError();
       markLogged(wrapped);
@@ -102,7 +102,7 @@ export class SessionRepository implements ISessionRepository {
     } catch (error) {
       logger.error(
         { err: error, sessionId },
-        "Failed to delete session record"
+        "Failed to delete session record",
       );
       const wrapped = new DeleteSessionError();
       markLogged(wrapped);

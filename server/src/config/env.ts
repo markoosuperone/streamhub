@@ -19,11 +19,14 @@ const schema = Type.Object({
   LOG_LEVEL: Type.Enum(LogLevel),
   HOST: Type.String({ default: "localhost" }),
   PORT: Type.Number({ default: 8000 }),
-  JWT_ACCESS_EXPIRES_IN: Type.Number({ default: 3600 }), 
+  JWT_ACCESS_EXPIRES_IN: Type.Number({ default: 3600 }),
   JWT_REFRESH_EXPIRES_IN: Type.Number({ default: 86400 }),
   JWT_ACCESS_SECRET: Type.String(),
   JWT_REFRESH_SECRET: Type.String(),
   MAX_FILE_SIZE_BYTES: Type.Number({ default: 1024 * 1024 * 500 }), // 500 MB default
+  // Auth cookies must be Secure in production; kept off by default so local
+  // development over plain HTTP still receives them.
+  COOKIE_SECURE: Type.Boolean({ default: false }),
 });
 
 const env = envSchema<Static<typeof schema>>({
@@ -50,6 +53,9 @@ export default {
   server: {
     host: env.HOST,
     port: env.PORT,
+  },
+  cookie: {
+    secure: env.COOKIE_SECURE,
   },
   db: {
     url: env.DATABASE_URL,
