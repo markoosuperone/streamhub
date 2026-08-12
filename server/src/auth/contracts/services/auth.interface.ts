@@ -1,6 +1,5 @@
-
 export interface IAuthService {
-  authenticate(authorizationHeader: string): Promise<{
+  authenticateToken(accessToken: string): Promise<{
     user_id: string;
     session_id: string;
   }>;

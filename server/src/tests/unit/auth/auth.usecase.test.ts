@@ -97,7 +97,7 @@ describe("AuthUsecase", () => {
       expect(result.user.email).toBe(user.email);
       expect(sessionRepository.createSession).toHaveBeenCalledWith(
         expect.objectContaining({ id: SESSION_ID }),
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(tokenProvider.generateToken).toHaveBeenCalledWith({
         user_id: user.id,
@@ -154,7 +154,7 @@ describe("AuthUsecase", () => {
       expect(transactionManager.withTransaction).not.toHaveBeenCalled();
       expect(result.user.email).toBe(user.email);
       expect(sessionRepository.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({ user_id: user.id })
+        expect.objectContaining({ user_id: user.id }),
       );
     });
 

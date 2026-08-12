@@ -1,0 +1,100 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-brand-surface);
+  border: 1px solid rgba(var(--color-brand-foreground-rgb), 0.07);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: rgba(var(--color-brand-foreground-rgb), 0.18);
+}
+
+.poster {
+  position: relative;
+  height: 130px;
+}
+
+.playOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: rgba(21, 18, 9, 0.75);
+  color: rgb(var(--color-brand-foreground-rgb));
+  font-size: 12px;
+}
+
+.badge,
+.badgeVideo {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(21, 18, 9, 0.8);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+}
+
+.badge {
+  color: rgba(var(--color-brand-foreground-rgb), 0.7);
+}
+
+.badgeVideo {
+  color: var(--color-brand-accent);
+}
+
+.duration {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(21, 18, 9, 0.8);
+  color: rgba(var(--color-brand-foreground-rgb), 0.8);
+  font-size: 10px;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 12px 12px;
+}
+
+.meta {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title {
+  margin: 0;
+  overflow: hidden;
+  color: rgb(var(--color-brand-foreground-rgb));
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.description {
+  margin: 0;
+  overflow: hidden;
+  color: rgba(var(--color-brand-foreground-rgb), 0.5);
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

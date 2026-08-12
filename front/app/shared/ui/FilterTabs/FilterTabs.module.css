@@ -1,0 +1,12 @@
+.filters {
+  display: flex;
+  gap: 8px;
+}
+
+.filterButton {
+  padding: 7px 15px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}

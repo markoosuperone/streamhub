@@ -45,7 +45,9 @@ export const mockSessionRepository = (): MockedObject<ISessionRepository> =>
     deleteSession: vi.fn(),
   }) as unknown as MockedObject<ISessionRepository>;
 
-export const mockTransactionManager = (): MockedObject<ITransactionManager<IDbTransaction>> =>
+export const mockTransactionManager = (): MockedObject<
+  ITransactionManager<IDbTransaction>
+> =>
   ({
     withTransaction: vi.fn(async (callback) => callback({} as IDbTransaction)),
   }) as unknown as MockedObject<ITransactionManager<IDbTransaction>>;
@@ -54,6 +56,7 @@ export const mockMediaRepository = (): MockedObject<IMediaStorage> => ({
   create: vi.fn(),
   getById: vi.fn(),
   getAllItems: vi.fn(),
+  getByIds: vi.fn(),
   delete: vi.fn(),
 });
 
@@ -67,6 +70,9 @@ export const mockFileService = (): MockedObject<IFileService> =>
     deleteFile: vi.fn(),
     stat: vi.fn(),
     getMediaDuration: vi.fn(),
+    generateThumbnail: vi.fn(),
+    createThumbnailReadStream: vi.fn(),
+    deleteThumbnail: vi.fn(),
   }) as unknown as MockedObject<IFileService>;
 
 export const mockPlaylistRepository = (): MockedObject<IPlaylistRepository> =>
@@ -78,17 +84,18 @@ export const mockPlaylistRepository = (): MockedObject<IPlaylistRepository> =>
     delete: vi.fn(),
   }) as unknown as MockedObject<IPlaylistRepository>;
 
-export const mockPlaylistItemRepository = (): MockedObject<IPlaylistItemRepository> =>
-  ({
-    create: vi.fn(),
-    getById: vi.fn(),
-    getByPlaylistId: vi.fn(),
-    getByPlaylistIdPaginated: vi.fn(),
-    update: vi.fn(),
-    updateForOwner: vi.fn(),
-    deleteForOwner: vi.fn(),
-    getByPlaylistIdAndPosition: vi.fn(),
-    decrementPosition: vi.fn(),
-    incrementPosition: vi.fn(),
-    decrementPositionsAfter: vi.fn(),
-  }) as unknown as MockedObject<IPlaylistItemRepository>;
+export const mockPlaylistItemRepository =
+  (): MockedObject<IPlaylistItemRepository> =>
+    ({
+      create: vi.fn(),
+      getById: vi.fn(),
+      getByPlaylistId: vi.fn(),
+      getByPlaylistIdPaginated: vi.fn(),
+      update: vi.fn(),
+      updateForOwner: vi.fn(),
+      deleteForOwner: vi.fn(),
+      getByPlaylistIdAndPosition: vi.fn(),
+      decrementPosition: vi.fn(),
+      incrementPosition: vi.fn(),
+      decrementPositionsAfter: vi.fn(),
+    }) as unknown as MockedObject<IPlaylistItemRepository>;

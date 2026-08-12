@@ -1,3 +1,5 @@
+import { MediaResponseDTO } from "./media.dto.ts";
+
 export interface PlaylistItemCreateDTO {
   playlist_id: string;
   media_id: string;
@@ -16,4 +18,8 @@ export interface PlaylistItemResponseDTO {
   position: number;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface PlaylistItemWithMediaResponseDTO extends PlaylistItemResponseDTO {
+  media: MediaResponseDTO;
 }

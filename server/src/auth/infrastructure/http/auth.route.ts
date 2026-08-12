@@ -3,9 +3,8 @@ import { FastifyInstance } from "fastify";
 import { AuthController } from "./auth.controller.ts";
 import {
   AuthResponse,
+  CsrfTokenResponse,
   LoginBody,
-  LogoutBody,
-  RefreshTokenBody,
   RegisterBody,
 } from "./auth.schema.ts";
 
@@ -42,17 +41,18 @@ export class AuthRoute {
       },
       handler: this.authController.login.bind(this.authController),
     });
-    fastify.post("/refresh-token", {
+    fastify.get("/csrf-token", {
       schema: {
-        body: RefreshTokenBody,
+        response: {
+          200: CsrfTokenResponse,
+        },
       },
+      handler: this.authController.csrfToken.bind(this.authController),
+    });
+    fastify.post("/refresh-token", {
       handler: this.authController.refreshToken.bind(this.authController),
     });
     fastify.post("/logout", {
-      schema: {
-        body: LogoutBody,
-        security: [{ bearerAuth: [] }],
-      },
       handler: this.authController.logout.bind(this.authController),
     });
   }

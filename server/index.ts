@@ -19,7 +19,7 @@ async function start() {
     await app.listen({ port: env.server.port, host: env.server.host });
     app.log.info(
       { host: env.server.host, port: env.server.port },
-      "Server is ready"
+      "Server is ready",
     );
   } catch (error) {
     app.log.error(error);

@@ -6,13 +6,12 @@ import { IMediaUsecase } from "@/media/application/media.usecase.ts";
 import { IAuthService } from "@/auth/contracts/services/auth.interface.ts";
 import { FileNotFoundError } from "@/media/errors/media.errors.ts";
 import { getAuthPayload } from "@/shared/utility/getAuthPayload.ts";
-import { MediaIdParams } from "./media.schema.ts";
-import { PaginationQueryString } from "@/shared/types/pagination.types.ts";
+import { MediaIdParams, MediaListQueryString } from "./media.schema.ts";
 
 export class MediaController {
   constructor(
     private readonly mediaUsecase: IMediaUsecase,
-    private readonly authService: IAuthService
+    private readonly authService: IAuthService,
   ) {}
 
   async upload(request: FastifyRequest, reply: FastifyReply) {
@@ -36,7 +35,7 @@ export class MediaController {
   }
   async execute(
     request: FastifyRequest<{ Params: Static<typeof MediaIdParams> }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     const { mediaId } = request.params;
     const rawRange = request.headers.range;
@@ -53,21 +52,39 @@ export class MediaController {
       .send(media.stream);
   }
 
+  async getThumbnail(
+    request: FastifyRequest<{ Params: Static<typeof MediaIdParams> }>,
+    reply: FastifyReply,
+  ) {
+    const { mediaId } = request.params;
+    await getAuthPayload(request, this.authService);
+    const thumbnail = await this.mediaUsecase.getThumbnail(mediaId);
+    return reply
+      .status(thumbnail.statusCode)
+      .headers(thumbnail.headers)
+      .send(thumbnail.stream);
+  }
+
   async getAllItems(
     request: FastifyRequest<{
-      Querystring: Static<typeof PaginationQueryString>;
+      Querystring: Static<typeof MediaListQueryString>;
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
-    const { limit = 20, offset = 0 } = request.query;
+    const { limit = 20, offset = 0, search, type } = request.query;
     await getAuthPayload(request, this.authService);
-    const media = await this.mediaUsecase.getAllItems(limit, offset);
+    const media = await this.mediaUsecase.getAllItems(
+      limit,
+      offset,
+      search,
+      type,
+    );
     return reply.status(200).send(media);
   }
 
   async delete(
     request: FastifyRequest<{ Params: Static<typeof MediaIdParams> }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     const { mediaId } = request.params;
     const payload = await getAuthPayload(request, this.authService);

@@ -4,9 +4,7 @@ import { ITransactionManager } from "@/transaction/repository/transaction.interf
 import { CustomError } from "@/shared/error/error.ts";
 import { logger, markLogged } from "@/shared/logger/logger.ts";
 
-export class PostgresTransactionManager
-  implements ITransactionManager<postgres.TransactionSql>
-{
+export class PostgresTransactionManager implements ITransactionManager<postgres.TransactionSql> {
   async withTransaction<T>(
     fn: (tx: postgres.TransactionSql) => T | Promise<T>,
   ): Promise<T> {

@@ -1,10 +1,11 @@
 import { IPlaylistItemRepository } from "@/playlists/contracts/repository/playlist-item.repository.interface.ts";
 import { IPlaylistItem } from "@/playlists/domain/playlist-item.domain.ts";
+import { toContainsPattern } from "@/shared/utility/likePattern.ts";
 import {
   GetByPlaylistIdRepoResponseDTO,
   PlaylistItemCreateRecordDTO,
 } from "@/playlists/dto/playlist-item.dto.ts";
-import { PlaylistItemUpdateDTO } from "@superplayer/contracts";
+import { MediaType, PlaylistItemUpdateDTO } from "@superplayer/contracts";
 import {
   CreatePlaylistItemRecordError,
   DeletePlaylistItemRecordError,
@@ -19,12 +20,28 @@ import postgres from "postgres";
 import { logger, markLogged } from "@/shared/logger/logger.ts";
 
 type DbExecutor = postgres.Sql;
+
+function buildPlaylistFilters(
+  db: DbExecutor,
+  playlistId: string,
+  ownerId: string,
+  search?: string,
+  mediaType?: MediaType,
+) {
+  return db`
+    WHERE p.id = ${playlistId}
+      AND p.owner_id = ${ownerId}
+      ${search ? db`AND mi.title ILIKE ${toContainsPattern(search)}` : db``}
+      ${mediaType ? db`AND mi.media_type = ${mediaType}` : db``}
+  `;
+}
+
 export class PlaylistItemRepository implements IPlaylistItemRepository {
   constructor(private readonly sql = getDb()) {}
 
   async create(
     playlistItem: PlaylistItemCreateRecordDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -39,8 +56,12 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
       return result;
     } catch (error) {
       logger.error(
-        { err: error, playlistId: playlistItem.playlist_id, mediaId: playlistItem.media_id },
-        "Failed to create playlist item record"
+        {
+          err: error,
+          playlistId: playlistItem.playlist_id,
+          mediaId: playlistItem.media_id,
+        },
+        "Failed to create playlist item record",
       );
       const wrapped = new CreatePlaylistItemRecordError();
       markLogged(wrapped);
@@ -51,7 +72,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
   async getById(
     id: string,
     ownerId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem | null> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -66,7 +87,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistItemId: id, ownerId },
-        "Failed to get playlist item record"
+        "Failed to get playlist item record",
       );
       const wrapped = new GetPlaylistItemRecordError();
       markLogged(wrapped);
@@ -74,20 +95,31 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     }
   }
   async getByPlaylistIdPaginated(
-    playlist_id: string,
+    playlistId: string,
     ownerId: string,
     limit: number,
     offset: number,
-    tx?: IDbTransaction
+    search: string,
+    mediaType: MediaType,
+    tx?: IDbTransaction,
   ): Promise<GetByPlaylistIdRepoResponseDTO> {
     const db = (tx ?? this.sql) as DbExecutor;
+
+    const filters = buildPlaylistFilters(
+      db,
+      playlistId,
+      ownerId,
+      search,
+      mediaType,
+    );
 
     try {
       const countResult = await db<{ count: string }[]>`
       SELECT COUNT(*) as count
       FROM playlist_items pi
       INNER JOIN playlists as p ON p.id = pi.playlist_id
-      WHERE p.id = ${playlist_id} AND p.owner_id = ${ownerId}
+      INNER JOIN media_items as mi ON mi.id = pi.media_id
+      ${filters}
       `;
 
       const total = Number(countResult[0]?.count ?? 0);
@@ -96,7 +128,8 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
       SELECT pi.*
       FROM playlist_items as pi
       INNER JOIN playlists as p ON p.id = pi.playlist_id
-      WHERE p.id = ${playlist_id} AND p.owner_id = ${ownerId}
+      INNER JOIN media_items as mi ON mi.id = pi.media_id
+      ${filters}
       ORDER BY pi.position
       LIMIT ${limit}
       OFFSET ${offset}
@@ -105,8 +138,8 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
       return { items: result, total };
     } catch (error) {
       logger.error(
-        { err: error, playlistId: playlist_id, ownerId },
-        "Failed to get paginated playlist item records"
+        { err: error, playlistId: playlistId, ownerId },
+        "Failed to get paginated playlist item records",
       );
       const wrapped = new GetPlaylistItemRecordError();
       markLogged(wrapped);
@@ -114,9 +147,9 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     }
   }
   async getByPlaylistId(
-    playlist_id: string,
+    playlistId: string,
     ownerId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem[]> {
     const db = (tx ?? this.sql) as DbExecutor;
 
@@ -125,14 +158,14 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
       SELECT pi.*
       FROM playlist_items as pi
       INNER JOIN playlists as p ON p.id = pi.playlist_id
-      WHERE p.id = ${playlist_id} AND p.owner_id = ${ownerId}
+      WHERE p.id = ${playlistId} AND p.owner_id = ${ownerId}
       ORDER BY pi.position
       `;
       return result;
     } catch (error) {
       logger.error(
-        { err: error, playlistId: playlist_id, ownerId },
-        "Failed to get playlist item records"
+        { err: error, playlistId: playlistId, ownerId },
+        "Failed to get playlist item records",
       );
       const wrapped = new GetPlaylistItemRecordError();
       markLogged(wrapped);
@@ -142,7 +175,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
 
   async update(
     playlistItem: PlaylistItemUpdateDTO,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -157,7 +190,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistItemId: playlistItem.id },
-        "Failed to update playlist item record"
+        "Failed to update playlist item record",
       );
       const wrapped = new UpdatePlaylistItemRecordError();
       markLogged(wrapped);
@@ -168,7 +201,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
   async updateForOwner(
     playlistItem: PlaylistItemUpdateDTO,
     ownerId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -188,7 +221,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistItemId: playlistItem.id, ownerId },
-        "Failed to update playlist item record for owner"
+        "Failed to update playlist item record for owner",
       );
       const wrapped = new UpdatePlaylistItemRecordError();
       markLogged(wrapped);
@@ -199,7 +232,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
   async deleteForOwner(
     id: string,
     ownerId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem | null> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -218,7 +251,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistItemId: id, ownerId },
-        "Failed to delete playlist item record for owner"
+        "Failed to delete playlist item record for owner",
       );
       const wrapped = new DeletePlaylistItemRecordError();
       markLogged(wrapped);
@@ -229,7 +262,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
   async getByPlaylistIdAndPosition(
     playlistId: string,
     position: number,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylistItem[]> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -240,7 +273,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistId, position },
-        "Failed to get playlist items by position"
+        "Failed to get playlist items by position",
       );
       const wrapped = new GetPlaylistItemRecordError();
       markLogged(wrapped);
@@ -252,7 +285,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     fromPosition: number,
     toPosition: number,
     playlistId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<boolean> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -268,7 +301,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistId, fromPosition, toPosition },
-        "Failed to decrement playlist item positions"
+        "Failed to decrement playlist item positions",
       );
       const wrapped = new DecrementPositionRecordError();
       markLogged(wrapped);
@@ -280,7 +313,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     fromPosition: number,
     toPosition: number,
     playlistId: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<boolean> {
     const db = (tx ?? this.sql) as DbExecutor;
     try {
@@ -297,7 +330,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistId, fromPosition, toPosition },
-        "Failed to increment playlist item positions"
+        "Failed to increment playlist item positions",
       );
       const wrapped = new IncrementPositionRecordError();
       markLogged(wrapped);
@@ -308,7 +341,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
   async decrementPositionsAfter(
     playlistId: string,
     deletedPosition: number,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<void> {
     const db = (tx ?? this.sql) as DbExecutor;
 
@@ -322,7 +355,7 @@ export class PlaylistItemRepository implements IPlaylistItemRepository {
     } catch (error) {
       logger.error(
         { err: error, playlistId, deletedPosition },
-        "Failed to decrement playlist item positions after delete"
+        "Failed to decrement playlist item positions after delete",
       );
       markLogged(error);
       throw error;

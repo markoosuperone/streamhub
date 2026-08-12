@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the placeholder template, which documents the variables and holds
+# no real values. Without this the file below would be silently unaddable.
+!.env.example
 
 # vercel
 .vercel

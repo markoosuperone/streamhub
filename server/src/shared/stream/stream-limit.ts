@@ -6,7 +6,7 @@ export class SizeLimitStream extends Transform {
   constructor(
     private maxSize: number,
     private readonly onLimitExceeded: () => Error = () =>
-      new Error("File size limit exceeded")
+      new Error("File size limit exceeded"),
   ) {
     super();
   }
@@ -14,7 +14,7 @@ export class SizeLimitStream extends Transform {
   override _transform(
     chunk: Buffer,
     _encoding: BufferEncoding,
-    callback: TransformCallback
+    callback: TransformCallback,
   ) {
     this.totalBytes += chunk.length;
 

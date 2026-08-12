@@ -1,0 +1,25 @@
+.heading {
+  width: 220px;
+  height: 24px;
+}
+
+.tabs {
+  width: 180px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+/* Same track sizing as shared/ui/Grid so the placeholders occupy exactly the
+   columns the real cards will. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+  align-content: start;
+}
+
+/* 130px poster + the title/meta block beneath it, matching MediaCard. */
+.card {
+  height: 196px;
+  border-radius: 14px;
+}

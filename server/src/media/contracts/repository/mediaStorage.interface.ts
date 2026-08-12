@@ -1,3 +1,4 @@
+import { MediaType } from "@superplayer/contracts";
 import { IDbTransaction } from "@/transaction/repository/transaction.interface.ts";
 import {
   CreateMediaDTO,
@@ -11,7 +12,14 @@ export interface IMediaStorage {
   getAllItems(
     limit: number,
     offset: number,
-    tx?: IDbTransaction
+    search?: string,
+    mediaType?: MediaType,
+    tx?: IDbTransaction,
   ): Promise<GetMediaByOwnerIdRepoResponseDTO>;
-  delete(id: string, userId: string, tx?: IDbTransaction): Promise<IMedia | null>;
+  getByIds(ids: string[], tx?: IDbTransaction): Promise<IMedia[]>;
+  delete(
+    id: string,
+    userId: string,
+    tx?: IDbTransaction,
+  ): Promise<IMedia | null>;
 }

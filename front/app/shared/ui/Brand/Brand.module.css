@@ -1,0 +1,25 @@
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--color-brand-accent);
+  color: var(--color-brand-accent-foreground);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.name {
+  color: rgb(var(--color-brand-foreground-rgb));
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}

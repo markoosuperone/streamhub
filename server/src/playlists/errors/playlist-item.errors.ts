@@ -13,7 +13,6 @@ const PlaylistItemErrors = {
   DECREMENT_POSITION_RECORD_ERROR: "Failed to decrement position record",
   INCREMENT_POSITION_RECORD_ERROR: "Failed to increment position record",
   POSITION_REQUIRED: "Position is required",
-  
 } as const;
 
 export class PlaylistItemAlreadyExistsError extends CustomError {
@@ -91,7 +90,7 @@ export class IncrementPositionRecordError extends CustomError {
     this.name = "IncrementPositionRecordError";
   }
 }
-export class PlaylistForCreatePlaylistNotFoundError extends CustomError{
+export class PlaylistForCreatePlaylistNotFoundError extends CustomError {
   constructor() {
     super(PlaylistItemErrors.PLAYLIST_FOR_CREATE_PLAYLIST_NOT_FOUND, 404);
     this.name = "MediaItemForCreatePlaylistNotFoundError";

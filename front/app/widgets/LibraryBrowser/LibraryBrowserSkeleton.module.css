@@ -1,0 +1,38 @@
+.sectionTitle {
+  width: 140px;
+  height: 18px;
+}
+
+.playlistRow {
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.playlistChip {
+  flex: 0 0 190px;
+  height: 56px;
+  border-radius: 12px;
+}
+
+.heading {
+  width: 200px;
+  height: 24px;
+}
+
+.tabs {
+  width: 180px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  height: 56px;
+  border-radius: 12px;
+}

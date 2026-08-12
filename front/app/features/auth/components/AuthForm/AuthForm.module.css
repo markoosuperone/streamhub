@@ -1,0 +1,60 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 23px;
+  border-radius: 18px;
+  background: var(--color-brand-surface);
+  border: 1px solid var(--color-brand-border);
+}
+
+.forgotRow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  height: 16px;
+}
+
+.forgotLink {
+  color: rgba(var(--color-brand-foreground-rgb), 0.45);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Always occupies its line so the card doesn't resize when a message appears */
+.error {
+  margin: 0;
+  min-height: 16px;
+  line-height: 16px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--color-brand-error);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.error[data-visible='true'] {
+  opacity: 1;
+}
+
+.submitWrap {
+  width: 100%;
+  padding-top: 4px;
+}
+
+.submit {
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.submit:disabled {
+  cursor: not-allowed;
+}

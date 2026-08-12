@@ -10,6 +10,7 @@ export interface CreateMediaDTO {
   size_bytes: number;
   duration_seconds: number;
   title: string;
+  has_thumbnail: boolean;
 }
 
 export interface UploadMediaInputDTO {

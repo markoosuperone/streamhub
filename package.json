@@ -3,6 +3,7 @@
   "workspaces": [
     "front",
     "server",
+    "e2e",
     "packages/*"
   ],
   "devDependencies": {

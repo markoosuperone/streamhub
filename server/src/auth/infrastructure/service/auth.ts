@@ -1,28 +1,18 @@
 import { IAuthService } from "@/auth/contracts/services/auth.interface.ts";
 import { ITokenProvider } from "@/auth/contracts/services/tokenProvider.interface.ts";
-import {
-  InvalidAuthorizationHeaderError,
-  InvalidTokenError,
-  UnauthorizedError,
-} from "@/auth/error/errors.ts";
+import { InvalidTokenError, UnauthorizedError } from "@/auth/error/errors.ts";
 
 export class AuthService implements IAuthService {
   constructor(private readonly tokenProvider: ITokenProvider) {}
 
-  async authenticate(
-    authorizationHeader: string
+  async authenticateToken(
+    accessToken: string,
   ): Promise<{ user_id: string; session_id: string }> {
-    if (!authorizationHeader) {
+    if (!accessToken) {
       throw new UnauthorizedError();
     }
 
-    const [scheme, token] = authorizationHeader.split(" ");
-
-    if (scheme !== "Bearer" || !token) {
-      throw new InvalidAuthorizationHeaderError();
-    }
-
-    const decoded = this.tokenProvider.verifyAccessToken(token);
+    const decoded = this.tokenProvider.verifyAccessToken(accessToken);
 
     if (!decoded) {
       throw new InvalidTokenError();

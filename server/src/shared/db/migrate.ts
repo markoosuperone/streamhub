@@ -16,7 +16,7 @@ async function ensureMigrationsTable(sql: ReturnType<typeof postgres>) {
 }
 
 async function getAppliedIds(
-  sql: ReturnType<typeof postgres>
+  sql: ReturnType<typeof postgres>,
 ): Promise<Set<string>> {
   const res = await sql<
     { id: string }[]

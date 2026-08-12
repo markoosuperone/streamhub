@@ -8,18 +8,18 @@ export interface IPlaylistRepository {
   getById(
     id: string,
     user_id: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylist | null>;
   update(
     playlist: PlaylistUpdateDTO,
     user_id: string,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<IPlaylist | null>;
   delete(id: string, user_id: string, tx?: IDbTransaction): Promise<boolean>;
   getByOwnerId(
     ownerId: string,
     limit: number,
     offset: number,
-    tx?: IDbTransaction
+    tx?: IDbTransaction,
   ): Promise<PlaylistGetByOwnerIdRepoResponseDTO>;
 }

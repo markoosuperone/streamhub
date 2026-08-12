@@ -5,11 +5,11 @@ export const PaginationQueryString = Type.Object({
     Type.Integer({
       minimum: 1,
       maximum: 100,
-    })
+    }),
   ),
   offset: Type.Optional(
     Type.Integer({
       minimum: 0,
-    })
+    }),
   ),
 });

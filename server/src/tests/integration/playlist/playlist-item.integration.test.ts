@@ -49,7 +49,8 @@ describe("Playlist item routes", () => {
     const res = await app.inject({
       method: "POST",
       url: "/playlist-items",
-      headers: { authorization: user.authHeader },
+      cookies: user.cookies,
+      headers: user.headers,
       payload: {
         playlist_id: playlistId,
         media_id: mediaId,
@@ -68,7 +69,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlistId, media_id: mediaId },
       });
 
@@ -99,7 +101,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlistId, media_id: media2.id },
       });
 
@@ -115,7 +118,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlistId, media_id: media2.id, position: 1 },
       });
 
@@ -135,7 +139,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlistId, media_id: mediaId },
       });
 
@@ -151,7 +156,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlistId, media_id: mediaId, position: 2 },
       });
 
@@ -168,7 +174,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: randomUUID(), media_id: media.id },
       });
 
@@ -192,7 +199,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
         payload: { playlist_id: playlist.id, media_id: media.id },
       });
 
@@ -210,7 +218,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlist.id, media_id: randomUUID() },
       });
 
@@ -233,7 +242,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: playlistOwner.authHeader },
+        cookies: playlistOwner.cookies,
+        headers: playlistOwner.headers,
         payload: { playlist_id: playlist.id, media_id: media.id },
       });
 
@@ -247,7 +257,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { media_id: media.id },
       });
 
@@ -261,7 +272,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlist.id, media_id: "not-a-uuid" },
       });
 
@@ -276,7 +288,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/playlist-items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { playlist_id: playlist.id, media_id: media.id, position: 0 },
       });
 
@@ -304,7 +317,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlist-items/${item.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(200);
@@ -320,7 +334,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlist-items/${randomUUID()}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -341,7 +356,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlist-items/${item.id}`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -353,7 +369,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/playlist-items/not-a-uuid",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -378,7 +395,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlist-items/${playlist.id}/items`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(200);
@@ -399,7 +417,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlist-items/${playlistId}/items`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       const body = JSON.parse(res.body);
@@ -408,6 +427,20 @@ describe("Playlist item routes", () => {
         item1.id,
         item2.id,
       ]);
+      expect(body.items[0]).toMatchObject({
+        media_id: mediaId,
+        media: {
+          id: mediaId,
+          owner_id: user.user_id,
+          title: "Test Video",
+          media_type: "video",
+          description: null,
+          file_path: `${user.user_id}/${mediaId}/test.mp4`,
+          mime_type: "video/mp4",
+          size_bytes: "1024",
+          duration_seconds: 60,
+        },
+      });
     });
 
     it("returns 404 when the playlist does not exist", async () => {
@@ -416,7 +449,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlist-items/${randomUUID()}/items`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -433,7 +467,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlist-items/${playlist.id}/items`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -446,7 +481,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/playlist-items/${playlist.id}/items?limit=0`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -458,7 +494,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/playlist-items/not-a-uuid/items",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -476,14 +513,7 @@ describe("Playlist item routes", () => {
   // ── PATCH /playlist-items/:id ────────────────────────────────────────────
 
   describe("PATCH /playlist-items/:id", () => {
-    // NOTE: PlaylistItemUsecase.updatePlaylistItem shifts siblings with
-    // decrementPosition when moving to a *lower* position number, which is
-    // backwards (it should increment them to make room) and produces
-    // position 0 / duplicate positions instead of a clean reorder. This test
-    // pins down the actual (buggy) persisted state rather than the
-    // conceptually "correct" reorder, so a real fix shows up as a deliberate
-    // test change instead of a silent regression.
-    it("moves an item to a lower position (documents the current sibling-shift bug)", async () => {
+    it("moves an item to a lower position, renumbering the items it displaces", async () => {
       const { user, playlistId, mediaId } = await setupPlaylistWithMedia();
       const item1 = await createItem(user, playlistId, mediaId); // position 1
       const media2 = await seedMediaRecord(user.user_id);
@@ -494,7 +524,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlist-items/${item3.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { id: item3.id, position: 1 },
       });
 
@@ -506,14 +537,13 @@ describe("Playlist item routes", () => {
         await db`SELECT * FROM playlist_items WHERE id = ${item1.id}`;
       const [row2] =
         await db`SELECT * FROM playlist_items WHERE id = ${item2.id}`;
-      expect(row1).toMatchObject({ position: 0 });
-      expect(row2).toMatchObject({ position: 1 });
+      // item3 takes position 1, so the two it jumped over shift down the list
+      // and their numbers rise: no gaps, no duplicates, no position 0.
+      expect(row1).toMatchObject({ position: 2 });
+      expect(row2).toMatchObject({ position: 3 });
     });
 
-    // NOTE: incrementPosition's range includes `toPosition + 1`, so moving
-    // to a higher position leaves a gap instead of a contiguous reorder.
-    // Same rationale as above: pin the actual behavior.
-    it("moves an item to a higher position (documents the current sibling-shift gap)", async () => {
+    it("moves an item to a higher position, closing the gap it leaves behind", async () => {
       const { user, playlistId, mediaId } = await setupPlaylistWithMedia();
       const item1 = await createItem(user, playlistId, mediaId); // position 1
       const media2 = await seedMediaRecord(user.user_id);
@@ -522,7 +552,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlist-items/${item1.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { id: item1.id, position: 2 },
       });
 
@@ -532,7 +563,7 @@ describe("Playlist item routes", () => {
       const db = getDb();
       const [row2] =
         await db`SELECT * FROM playlist_items WHERE id = ${item2.id}`;
-      expect(row2).toMatchObject({ position: 3 });
+      expect(row2).toMatchObject({ position: 1 });
     });
 
     // The request schema requires a body `id`, but the handler only ever
@@ -545,7 +576,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlist-items/${item.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { id: randomUUID(), position: 1 },
       });
 
@@ -559,7 +591,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlist-items/${randomUUID()}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { id: randomUUID(), position: 1 },
       });
 
@@ -581,7 +614,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlist-items/${item.id}`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
         payload: { id: item.id, position: 1 },
       });
 
@@ -595,7 +629,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlist-items/${item.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { id: item.id },
       });
 
@@ -609,7 +644,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: `/playlist-items/${item.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { id: item.id, position: 0 },
       });
 
@@ -622,7 +658,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "PATCH",
         url: "/playlist-items/not-a-uuid",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
         payload: { id: randomUUID(), position: 1 },
       });
 
@@ -654,7 +691,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/playlist-items/${item1.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(204);
@@ -679,7 +717,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/playlist-items/${randomUUID()}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -700,7 +739,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/playlist-items/${item.id}`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -716,7 +756,8 @@ describe("Playlist item routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: "/playlist-items/not-a-uuid",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);

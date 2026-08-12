@@ -1,7 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(pg_isready -h localhost -p 5432)"
-    ]
+    "allow": ["Bash(pg_isready -h localhost -p 5432)"]
   }
 }

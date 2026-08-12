@@ -1,5 +1,4 @@
-import { TokenPairDTO } from "@superplayer/contracts";
-import { TokenPayloadDTO } from "@/auth/dto/auth.dto.ts";
+import { TokenPairDTO, TokenPayloadDTO } from "@/auth/dto/auth.dto.ts";
 import { JwtPayload } from "jsonwebtoken";
 
 type AccessTokenPayload = JwtPayload & {
@@ -13,7 +12,7 @@ export interface ITokenProvider {
   verifyRefreshToken: (token: string) => JwtPayload | string;
 }
 export function isAccessTokenPayload(
-  decoded: unknown
+  decoded: unknown,
 ): decoded is AccessTokenPayload {
   return (
     typeof decoded === "object" &&

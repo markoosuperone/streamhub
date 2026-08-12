@@ -8,12 +8,12 @@ export const CreatePlaylistBody = Type.Object(
   {
     title: Type.String({ minLength: 1 }),
   },
-  { additionalProperties: false }
+  { additionalProperties: false },
 );
 
 export const UpdatePlaylistBody = Type.Object(
   {
     title: Type.String({ minLength: 1 }),
   },
-  { additionalProperties: false }
+  { additionalProperties: false },
 );

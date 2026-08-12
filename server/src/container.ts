@@ -9,6 +9,7 @@ import { SessionRepository } from "@/auth/infrastructure/db/session.repository.t
 import { AuthUsecase } from "@/auth/application/auth.usecase.ts";
 import { AuthController } from "@/auth/infrastructure/http/auth.controller.ts";
 import { AuthRoute } from "@/auth/infrastructure/http/auth.route.ts";
+import { createSessionRefreshHook } from "@/auth/infrastructure/http/session-refresh.hook.ts";
 
 import { MediaRepository } from "@/media/infrastructure/db/media.repository.ts";
 import { FileService } from "@/media/infrastructure/file/file.service.ts";
@@ -26,14 +27,20 @@ import { PlaylistItemUsecase } from "@/playlists/application/playlist-item.useca
 import { PlaylistItemController } from "@/playlists/infrastructure/http/playlist-item.controller.ts";
 import { PlaylistItemRouter } from "@/playlists/infrastructure/http/playlist-item.router.ts";
 
+import { UserUsecase } from "@/users/application/user.usecase.ts";
+import { UserController } from "@/users/infrastructure/http/user.controller.ts";
+import { UserRouter } from "@/users/infrastructure/http/user.router.ts";
+
 import { UuidGenerator } from "@/shared/utility/uuid-generator.ts";
 import { HealthCheckRouter } from "@/server/health/health.route.ts";
 
 export interface Container {
+  sessionRefreshHook: ReturnType<typeof createSessionRefreshHook>;
   authRoute: AuthRoute;
   mediaRoute: MediaRoute;
   playlistRouter: PlaylistRouter;
   playlistItemRouter: PlaylistItemRouter;
+  userRouter: UserRouter;
   healthCheckRouter: HealthCheckRouter;
 }
 
@@ -45,18 +52,20 @@ export function buildContainer(): Container {
   const uuidGenerator = new UuidGenerator();
 
   // ── Auth ────────────────────────────────────────────────────────────────────
-  const authRoute = new AuthRoute(
-    new AuthController(
-      new AuthUsecase(
-        new PGUserRepository(),
-        new Hasher(),
-        tokenProvider,
-        new SessionRepository(),
-        transactionManager,
-        uuidGenerator
-      ),
-      authService
-    )
+  const userRepository = new PGUserRepository();
+  const authUsecase = new AuthUsecase(
+    userRepository,
+    new Hasher(),
+    tokenProvider,
+    new SessionRepository(),
+    transactionManager,
+    uuidGenerator,
+  );
+  const authRoute = new AuthRoute(new AuthController(authUsecase, authService));
+
+  // ── Users ───────────────────────────────────────────────────────────────────
+  const userRouter = new UserRouter(
+    new UserController(new UserUsecase(userRepository), authService),
   );
 
   // ── Media ───────────────────────────────────────────────────────────────────
@@ -64,8 +73,8 @@ export function buildContainer(): Container {
   const mediaRoute = new MediaRoute(
     new MediaController(
       new MediaUsecase(mediaRepository, new FileService(), uuidGenerator),
-      authService
-    )
+      authService,
+    ),
   );
 
   // ── Playlist ─────────────────────────────────────────────────────────────────
@@ -73,8 +82,8 @@ export function buildContainer(): Container {
   const playlistRouter = new PlaylistRouter(
     new PlaylistController(
       new PlaylistUsecase(playlistRepository),
-      authService
-    )
+      authService,
+    ),
   );
 
   // ── Playlist Item ─────────────────────────────────────────────────────────────
@@ -84,17 +93,19 @@ export function buildContainer(): Container {
         new PlaylistItemRepository(),
         transactionManager,
         mediaRepository,
-        playlistRepository
+        playlistRepository,
       ),
-      authService
-    )
+      authService,
+    ),
   );
 
   return {
+    sessionRefreshHook: createSessionRefreshHook(authService, authUsecase),
     authRoute,
     mediaRoute,
     playlistRouter,
     playlistItemRouter,
+    userRouter,
     healthCheckRouter: new HealthCheckRouter(),
   };
 }

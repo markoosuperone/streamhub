@@ -47,15 +47,15 @@ src/
 
 Each of `auth`, `media`, and `playlists` follows the same internal layout:
 
-| Layer | Location | Responsibility |
-|---|---|---|
-| **Domain** | `domain/` | Plain entities/value types. No framework or DB dependencies. |
-| **Application** | `application/*.usecase.ts` | Business logic and orchestration. Depends only on `contracts/` interfaces — never imports a concrete repository or service class. |
-| **Contracts** | `contracts/repository/`, `contracts/services/` | Interfaces ("ports") that infrastructure implements. This is what makes use cases testable and framework-agnostic. |
-| **Infrastructure — HTTP** | `infrastructure/http/*.controller.ts`, `*.router.ts`, `*.schema.ts` | Controllers translate HTTP → use case calls and shape responses; routers register routes and attach schemas; schemas are TypeBox definitions. |
-| **Infrastructure — DB** | `infrastructure/db/*.repository.ts` | Implements a repository contract against PostgreSQL. |
-| **Infrastructure — services** | `infrastructure/service/`, `infrastructure/file/` | Implements a service contract (hashing, JWT, file storage). |
-| **Errors** | `errors/*.errors.ts` | Typed `CustomError` subclasses for that module. |
+| Layer                         | Location                                                            | Responsibility                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Domain**                    | `domain/`                                                           | Plain entities/value types. No framework or DB dependencies.                                                                                  |
+| **Application**               | `application/*.usecase.ts`                                          | Business logic and orchestration. Depends only on `contracts/` interfaces — never imports a concrete repository or service class.             |
+| **Contracts**                 | `contracts/repository/`, `contracts/services/`                      | Interfaces ("ports") that infrastructure implements. This is what makes use cases testable and framework-agnostic.                            |
+| **Infrastructure — HTTP**     | `infrastructure/http/*.controller.ts`, `*.router.ts`, `*.schema.ts` | Controllers translate HTTP → use case calls and shape responses; routers register routes and attach schemas; schemas are TypeBox definitions. |
+| **Infrastructure — DB**       | `infrastructure/db/*.repository.ts`                                 | Implements a repository contract against PostgreSQL.                                                                                          |
+| **Infrastructure — services** | `infrastructure/service/`, `infrastructure/file/`                   | Implements a service contract (hashing, JWT, file storage).                                                                                   |
+| **Errors**                    | `errors/*.errors.ts`                                                | Typed `CustomError` subclasses for that module.                                                                                               |
 
 New code should be added to the matching layer of the matching module — don't create new
 top-level folders or bypass a layer (e.g. a controller must not query the database directly).
@@ -241,7 +241,7 @@ then relative imports. Follow this even though it isn't enforced by tooling yet.
   - Unit tests: `it("should <expected behavior>", ...)`.
   - Integration tests: plain, present-tense behavior descriptions without "should" — e.g.
     `it("returns 404 when the playlist does not exist", ...)`, `it("creates a playlist owned by
-    the caller", ...)`.
+the caller", ...)`.
   - Group related tests with `describe("<UsecaseName>" | "<METHOD> /route", ...)`.
 - **Arrange–Act–Assert**: keep the three phases visually distinct within a test — set up
   mocks/fixtures, perform the one action under test, then assert. Don't interleave assertions with
@@ -262,8 +262,9 @@ then relative imports. Follow this even though it isn't enforced by tooling yet.
   `{ statusCode, error, message }`. It does not log 4xx errors, and it does not re-log a 5xx error
   that was already logged at its origin (see `markLogged`/`hasBeenLogged` in
   `src/shared/logger/logger.ts`).
-- Status codes actually used in this codebase: `400`, `401`, `404`, `409`, `416`, `500`. Ownership
-  mismatches return `404` (not `403`) — a resource that exists but isn't owned by the caller looks
+- Status codes actually used in this codebase: `400`, `401`, `403`, `404`, `409`, `416`, `500`.
+  `403` is raised **only** by the CSRF guard (a rejected or missing token); it is not used for
+  authorization. Ownership mismatches return `404` (not `403`) — a resource that exists but isn't owned by the caller looks
   identical to a resource that doesn't exist, to avoid confirming its existence to non-owners.
   Follow this pattern for new ownership checks rather than introducing `403`.
 
@@ -299,6 +300,13 @@ then relative imports. Follow this even though it isn't enforced by tooling yet.
   `idx_playlist_items_playlist_position (playlist_id, position)` — write queries that can use it).
   Avoid N+1 patterns; a repository method should generally be one query (or a small, fixed number
   of queries, as `getByOwnerId`/`getAllItems` already do for count + page).
+- **Indexes**: match the index type to the predicate, and check with `EXPLAIN (ANALYZE, BUFFERS)`
+  before adding one — several plausible-looking indexes here turned out to be unusable or ignored.
+  A btree cannot serve `ILIKE '%…%'` (title search uses a GIN `gin_trgm_ops` index instead), and
+  the planner ignores an index on a low-cardinality column like `media_type`, preferring to walk
+  `created_at` and filter. Conversely, **don't drop an index on a foreign-key column just because
+  no query filters on it** — `ON DELETE CASCADE` needs it (`idx_media_items_owner_id` exists only
+  for that).
 - **Streaming**: media upload writes via a Node stream pipeline with a size-limiting transform
   (`SizeLimitStream`), never buffering the full upload in memory. Media reads use `fs.createReadStream`
   and support HTTP Range requests (206 partial content) instead of loading whole files. Follow this
@@ -309,7 +317,18 @@ then relative imports. Follow this even though it isn't enforced by tooling yet.
 ## Security
 
 - **Authentication**: JWT access tokens (short-lived) + refresh tokens (longer-lived, rotated on
-  every use), verified via `Authorization: Bearer <token>`. See `README.md` for the full flow.
+  every use), carried **only** as `httpOnly`, `SameSite=Lax` cookies. An `Authorization` header is
+  not a credential and is ignored. `getAuthPayload` is the single entry point, and tokens never
+  appear in a response body — the login/register response is `{ user }` and nothing more. See
+  `README.md` for the full flow.
+- **Transparent refresh**: an `onRequest` hook (`auth/infrastructure/http/session-refresh.hook.ts`)
+  renews an expired access-token cookie in place when a valid refresh cookie is present, because
+  `<img>`/`<audio>` requests cannot be retried by any client-side interceptor. Concurrent rotations
+  of the same token are collapsed into one call and the result is reused for a short window
+  (`REFRESH_COALESCE_WINDOW_MS`), so a burst of parallel requests doesn't invalidate itself. The
+  window leaves the old refresh token replayable for its duration — the same trade-off a
+  refresh-token grace period makes. The coalescing map is per-process; running more than one
+  instance needs it moved into the sessions table.
 - **Authorization**: ownership checks (`owner_id`) enforced in the repository query itself for
   playlists, playlist items, and media deletion. Media reads/listing are intentionally not
   ownership-scoped — the media library is shared across authenticated users by design; don't add
@@ -322,9 +341,16 @@ then relative imports. Follow this even though it isn't enforced by tooling yet.
 - **XSS**: not directly applicable — this is a JSON-only API with no server-rendered HTML.
   `@fastify/helmet` sets baseline security headers regardless. If any endpoint ever renders HTML or
   echoes user input into another HTML context, escape it explicitly at that point.
-- **CSRF**: not implemented and not currently needed — authentication is a stateless `Authorization`
-  header (Bearer token), not a cookie, so CSRF (which exploits ambient cookie auth) doesn't apply.
-  TODO: if cookie-based auth is ever introduced, CSRF protection must be added at that time.
+- **CSRF**: cookie authentication is accepted, so CSRF applies. Two layers guard it. The auth
+  cookies are `SameSite=Lax`, which already stops cross-site `POST`/`PATCH`/`DELETE` from carrying
+  them; on top of that `@fastify/csrf-protection` requires a token, issued by `GET /csrf-token` and
+  echoed in an `x-csrf-token` header. The guard (`auth/infrastructure/http/csrf.hook.ts`) applies
+  it to requests that arrive with an auth cookie. Safe methods and the session-establishing routes
+  (`/register`, `/login`, `/refresh-token`) are exempt; a client cannot hold a token before it has
+  a session, and `SameSite=Lax` already keeps a cross-site `POST` from carrying the cookie those
+  routes would act on. The guard runs at `onRequest` — ahead of authentication, so a forged request
+  is rejected without the token ever being examined, and a forged upload is rejected before its
+  body is read. When adding a mutating route it is covered automatically; do not opt out per route.
 - **Secrets management**: configuration (including JWT secrets and DB credentials) comes from
   environment variables via `env-schema`/`.env`. Secrets are never logged (see Logging). There is
   no external secrets manager/vault integration — TODO if required for production deployment.
@@ -401,7 +427,7 @@ then relative imports. Follow this even though it isn't enforced by tooling yet.
   use case signatures.
 - Prefer small, focused functions/methods over large multi-responsibility ones — this mirrors the
   existing use case methods, which each do one thing (create, get, update, delete, list).
-- Comment only to explain *why*, not *what* — this matches the existing codebase's sparse,
+- Comment only to explain _why_, not _what_ — this matches the existing codebase's sparse,
   high-signal commenting style (see the comments in `PostgresTransactionManager.ts` or
   `error-handler.ts` for the expected tone and density). Don't restate what the code already says.
 

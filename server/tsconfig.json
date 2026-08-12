@@ -8,10 +8,9 @@
     "rootDir": "./",
     "outDir": "./dist",
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "#src/*": ["src/*"]
+      "@/*": ["./src/*"],
+      "#src/*": ["./src/*"]
     },
 
     "strict": true,

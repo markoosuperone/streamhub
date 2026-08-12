@@ -70,7 +70,8 @@ describe("Media routes", () => {
     const res = await app.inject({
       method: "POST",
       url: "/media/upload",
-      headers: { authorization: user.authHeader, "content-type": contentType },
+      cookies: user.cookies,
+      headers: { ...user.headers, "content-type": contentType },
       payload: body,
       remoteAddress: uniqueIp(),
     });
@@ -112,6 +113,27 @@ describe("Media routes", () => {
       expect(stat.isFile()).toBe(true);
     });
 
+    it("records whether a thumbnail was actually produced", async () => {
+      const user = await registerUser(app, "thumbflag@test.com");
+
+      const res = await uploadAudio(user);
+
+      expect(res.statusCode).toBe(201);
+      const body = JSON.parse(res.body) as {
+        file_path: string;
+        has_thumbnail: boolean;
+      };
+      expect(typeof body.has_thumbnail).toBe("boolean");
+
+      // Generation is best-effort, so the fixture's own outcome isn't the
+      // point — the flag simply has to agree with what is on disk.
+      const thumbnailExists = await fs
+        .stat(path.join(path.dirname(body.file_path), "thumb.jpg"))
+        .then(() => true)
+        .catch(() => false);
+      expect(body.has_thumbnail).toBe(thumbnailExists);
+    });
+
     it("returns 401 when no Authorization header is provided", async () => {
       const { body, contentType } = buildMultipartBody({
         filename: "clip.mp3",
@@ -140,8 +162,9 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/media/upload",
+        cookies: user.cookies,
         headers: {
-          authorization: user.authHeader,
+          ...user.headers,
           "content-type": contentType,
         },
         payload: body,
@@ -165,8 +188,9 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "POST",
         url: "/media/upload",
+        cookies: user.cookies,
         headers: {
-          authorization: user.authHeader,
+          ...user.headers,
           "content-type": contentType,
         },
         payload: body,
@@ -194,7 +218,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/media",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(200);
@@ -206,6 +231,44 @@ describe("Media routes", () => {
       });
     });
 
+    // A search term is user text, not a LIKE pattern: unescaped, "%" would
+    // match every row and "_" any single character.
+    it("treats % in a search term literally instead of as a wildcard", async () => {
+      const user = await registerUser(app, "wildcard-pct@test.com");
+      await seedMediaRecord(user.user_id, { title: "Discount 100% off" });
+      await seedMediaRecord(user.user_id, { title: "Plain track" });
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/media?search=%25",
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.total).toBe(1);
+      expect(body.items[0].title).toBe("Discount 100% off");
+    });
+
+    it("treats _ in a search term literally instead of as a wildcard", async () => {
+      const user = await registerUser(app, "wildcard-underscore@test.com");
+      await seedMediaRecord(user.user_id, { title: "track_01" });
+      await seedMediaRecord(user.user_id, { title: "trackXY" });
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/media?search=k_0",
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.total).toBe(1);
+      expect(body.items[0].title).toBe("track_01");
+    });
+
     it("lists media across all owners (library is shared, not per-user)", async () => {
       const owner = await registerUser(app, "list-owner@test.com");
       const other = await registerUser(app, "list-other@test.com");
@@ -215,7 +278,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/media",
-        headers: { authorization: owner.authHeader },
+        cookies: owner.cookies,
+        headers: owner.headers,
       });
 
       expect(res.statusCode).toBe(200);
@@ -233,12 +297,14 @@ describe("Media routes", () => {
       const page1 = await app.inject({
         method: "GET",
         url: "/media?limit=2&offset=0",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
       const page2 = await app.inject({
         method: "GET",
         url: "/media?limit=2&offset=2",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(JSON.parse(page1.body)).toMatchObject({
@@ -255,6 +321,143 @@ describe("Media routes", () => {
       expect(JSON.parse(page2.body).items).toHaveLength(1);
     });
 
+    it("filters by title, case-insensitively", async () => {
+      const user = await registerUser(app, "search-user@test.com");
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "Lo-Fi Beats",
+      });
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "Synthwave Nights",
+      });
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/media?search=lo-fi",
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.total).toBe(1);
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0].title).toBe("Lo-Fi Beats");
+    });
+
+    it("matches on a partial, mid-title substring", async () => {
+      const user = await registerUser(app, "search-partial@test.com");
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "Late Night Loops",
+      });
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/media?search=night",
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).total).toBe(1);
+    });
+
+    it("returns an empty page when nothing matches the search term", async () => {
+      const user = await registerUser(app, "search-nomatch@test.com");
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "Lo-Fi Beats",
+      });
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/media?search=nonexistent",
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body)).toMatchObject({ items: [], total: 0 });
+    });
+
+    it("filters by media type", async () => {
+      const user = await registerUser(app, "type-filter@test.com");
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "A Song",
+        media_type: "audio",
+      });
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "A Video",
+        media_type: "video",
+      });
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/media?type=audio",
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.total).toBe(1);
+      expect(body.items[0]).toMatchObject({
+        title: "A Song",
+        media_type: "audio",
+      });
+    });
+
+    it("combines search and media type filters", async () => {
+      const user = await registerUser(app, "combined-filter@test.com");
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "Lo-Fi Beats",
+        media_type: "audio",
+      });
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "Lo-Fi Visuals",
+        media_type: "video",
+      });
+      await seedMediaRecord(user.user_id, {
+        id: randomUUID(),
+        title: "Synthwave Nights",
+        media_type: "audio",
+      });
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/media?search=lo-fi&type=audio",
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.total).toBe(1);
+      expect(body.items[0]).toMatchObject({
+        title: "Lo-Fi Beats",
+        media_type: "audio",
+      });
+    });
+
+    it("returns 400 for an invalid media type", async () => {
+      const user = await registerUser(app, "type-invalid@test.com");
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/media?type=image",
+        cookies: user.cookies,
+        headers: user.headers,
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
     it.each([
       ["limit=0", "/media?limit=0"],
       ["limit=101", "/media?limit=101"],
@@ -269,7 +472,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -295,7 +499,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/media/${media.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(200);
@@ -315,7 +520,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/media/${media.id}`,
-        headers: { authorization: user.authHeader, range: "bytes=0-3" },
+        cookies: user.cookies,
+        headers: { ...user.headers, range: "bytes=0-3" },
       });
 
       expect(res.statusCode).toBe(206);
@@ -332,7 +538,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/media/${media.id}`,
-        headers: { authorization: user.authHeader, range: "bytes=9999-10000" },
+        cookies: user.cookies,
+        headers: { ...user.headers, range: "bytes=9999-10000" },
       });
 
       expect(res.statusCode).toBe(416);
@@ -350,7 +557,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/media/${media.id}`,
-        headers: { authorization: user.authHeader, range: "not-a-range" },
+        cookies: user.cookies,
+        headers: { ...user.headers, range: "not-a-range" },
       });
 
       expect(res.statusCode).toBe(400);
@@ -365,7 +573,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/media/${randomUUID()}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -380,7 +589,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: "/media/not-a-uuid",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -407,7 +617,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "GET",
         url: `/media/${media.id}`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
       });
 
       expect(res.statusCode).toBe(200);
@@ -426,7 +637,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/media/${media.id}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(204);
@@ -445,7 +657,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/media/${randomUUID()}`,
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(404);
@@ -460,7 +673,8 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: "/media/not-a-uuid",
-        headers: { authorization: user.authHeader },
+        cookies: user.cookies,
+        headers: user.headers,
       });
 
       expect(res.statusCode).toBe(400);
@@ -474,9 +688,10 @@ describe("Media routes", () => {
       expect(res.statusCode).toBe(401);
     });
 
-    // Same documented gap as GET /media/:mediaId: delete is not restricted
-    // to the owner.
-    it("allows a different authenticated user to delete someone else's media (no ownership check)", async () => {
+    // Reads are shared library-wide by design, but deletion is owner-scoped in
+    // the repository query itself. A non-owner gets 404 rather than 403, so the
+    // response can't be used to confirm that someone else's media exists.
+    it("refuses to delete someone else's media and leaves the record intact", async () => {
       const owner = await registerUser(app, "cross-delete-owner@test.com");
       const other = await registerUser(app, "cross-delete-other@test.com");
       const media = await seedMediaWithFile(owner.user_id);
@@ -485,13 +700,14 @@ describe("Media routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `/media/${media.id}`,
-        headers: { authorization: other.authHeader },
+        cookies: other.cookies,
+        headers: other.headers,
       });
 
-      expect(res.statusCode).toBe(204);
+      expect(res.statusCode).toBe(404);
       const db = getDb();
       const rows = await db`SELECT * FROM media_items WHERE id = ${media.id}`;
-      expect(rows).toHaveLength(0);
+      expect(rows).toHaveLength(1);
     });
   });
 });
